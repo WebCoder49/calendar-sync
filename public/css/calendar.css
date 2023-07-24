@@ -1,0 +1,242 @@
+/* Variables */
+body {
+    --time-interval-px: 1px;
+    /* Per Minute */
+    --time-interval-per-hour: 60;
+    /* 60m=1hr */
+
+    --column-width-px: 100px;
+    --column-gap-px: 10px;
+    --num-columns: 7;
+}
+
+.calendar-container {
+    --column-width-px: max(100px, calc((100vw - 160px) / var(--num-columns)));
+}
+
+
+.calendar-container {
+    /* Center */
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: 0;
+
+    position: relative;
+    top: 0;
+    left: 0;
+}
+
+.calendar-container.summary .calendar-content.loading::before {
+    text-align: left;
+    line-height: 2em;
+    width: auto;
+    height: auto;
+    background-color: transparent;
+    backdrop-filter: none;
+}
+
+.calendar-content.loading::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background-color: var(--black-transparent);
+    backdrop-filter: blur(20px);
+
+    color: var(--white);
+    text-align: center;
+    line-height: 50vh;
+    font-size: 30px;
+    content: "Loading Calendar";
+
+    z-index: 1;
+    border-radius: 5px;
+}
+
+.calendar-container {
+    overflow: hidden;
+}
+
+.calendar {
+    overflow-x: visible;
+    overflow-y: visible;
+
+    position: relative;
+    top: 0;
+    left: 0;
+
+    margin: 8px;
+    border-radius: 5px;
+
+    margin-top: 100px;
+    /* As labels above */
+    margin-left: 58px;
+    /* As labels to left */
+    width: fit-content;
+}
+
+.calendar-content {
+    display: grid;
+    grid-template-columns: repeat(var(--num-columns, 7), var(--column-width-px, 100px));
+    /* Each row 15min for 24h */
+    grid-template-rows: repeat(1440, var(--time-interval-px, 1px));
+    /* 1440 min/day */
+    column-gap: var(--column-gap-px, 10px);
+
+    height: calc(100vh - 450px);
+    margin: 0;
+    padding: 0;
+    overflow-x: visible;
+    overflow-y: auto;
+
+    background-color: var(--black);
+    background: repeating-linear-gradient(90deg,
+            transparent 0,
+            transparent calc(var(--column-width-px, 100px) + (var(--column-gap-px, 10px) / 2) - 1px),
+            #444 calc(var(--column-width-px, 100px) + (var(--column-gap-px, 10px) / 2) - 1px),
+            #444 calc(var(--column-width-px, 100px) + (var(--column-gap-px, 10px) / 2)),
+            transparent calc(var(--column-width-px, 100px) + (var(--column-gap-px, 10px) / 2)),
+            transparent calc(var(--column-width-px, 100px) + var(--column-gap-px, 10px))),
+        repeating-linear-gradient(0deg, transparent 0, transparent 59px, #444 59px, #444 60px),
+        repeating-linear-gradient(0deg, #111 0, #111 29px, #333 29px, #333 30px);
+    background-attachment: local;
+}
+
+.calendar .side-labels {
+    width: 50px;
+
+    position: absolute;
+    top: calc(-20px - var(--scrolled-by, 0px));
+    left: -50px;
+
+    font-size: 15px;
+    line-height: calc(var(--time-interval-px, 1px) * var(--time-interval-per-hour, 60));
+
+    color: var(--white);
+}
+
+.calendar .top-labels {
+    height: fit-content;
+
+    position: absolute;
+    top: 0;
+    transform: translateY(-100%);
+    left: 0;
+
+    margin: 0;
+    padding: 0;
+}
+
+.calendar .top-labels div {
+    max-width: unset;
+    width: var(--column-width-px, 100px);
+    margin-right: var(--column-gap-px, 10px);
+    float: left;
+}
+
+.calendar .top-labels div:last-child {
+    margin-right: 0;
+}
+
+.calendar .event {
+    background-color: var(--accent-color-2-darker);
+    color: var(--black);
+    border: 1px solid var(--black);
+
+    border-radius: 5px;
+    padding: 5px;
+    text-align: center;
+    color: var(--white);
+    text-align: center;
+    font-size: 90%;
+
+    grid-row-start: calc(var(--starttime, 1) + 1);
+    grid-row-end: calc(var(--endtime, 1) + 1);
+    grid-column-start: calc(var(--col, 1) + 1);
+    /* 1-indexed */
+    grid-column-end: calc(var(--col, 1) + 2);
+}
+
+.calendar .event.unregistered {
+    background-color: var(--grey);
+}
+
+.calendar .free {
+    background-color: var(--accent-color-1);
+    color: var(--black);
+
+    border-radius: 0;
+    padding: 5px;
+    text-align: left;
+
+    grid-row-start: calc(var(--starttime, 1) + 1);
+    grid-row-end: calc(var(--endtime, 1) + 1);
+    grid-column-start: 1;
+    grid-column-end: calc(var(--num-columns, 7) + 1);
+}
+
+/* .calendar-container.summary: only show free slots - TODO: Check if needed */
+.calendar-container.summary {
+    display: block;
+    width: 100%;
+}
+.calendar-container.summary .calendar {
+    margin: 0;
+    width: 100%;
+
+    display: block;
+}
+.calendar-container.summary .calendar-content {
+    background-color: transparent;
+    background: transparent;
+    width: 100%;
+
+    display: block;
+}
+
+.calendar-container.summary .calendar .top-labels {
+    display: none;
+}
+.calendar-container.summary .calendar .side-labels {
+    display: none;
+}
+.calendar-container.summary .calendar-content .event {
+    display: none;
+}
+.calendar-container.summary .calendar-content .free {
+    display: inline-block;
+    width: calc(100% - 40px);
+    margin: 10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.filter {
+    text-align: center;
+
+    padding: 10px;
+    margin: 10px;
+}
+
+.filter label {
+    display: inline-block;
+
+    width: min-content;
+    white-space: nowrap;
+    overflow: visible;
+    text-align: center;
+
+    font-size: 15px;
+    color: var(--white);
+}
+
+.filter select, .filter button, .filter input {
+    text-align: center;
+}

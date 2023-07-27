@@ -21,10 +21,6 @@
             <p class="warning">{{ $num_unregistered }} users are unregistered and have not set up their calendar yet.</p>
         @endif
     @endif
-    <div class="filter">
-        <label for="filter_date">Date<br/><input id="filter_date" type="date"/><br/><button id="goto_prevmonth">&laquo;</button><button id="goto_prev">&lt;</button><button id="goto_today">Today</button><button id="goto_next">&gt;</button><button id="goto_nextmonth">&raquo;</button></label>
-        <label for="filter_view_as">View As<br/><select id="filter_view_as" onchange="document.querySelector('.calendar-container').classList.toggle('summary')"><option selected>Calendar</option><option>Summary</option></select></label>
-    </div>
     {{-- @php($num_free_slots = count($free_slots)) --}}
     <p style="text-align: center;">(Time Zone: <strong>{{ $timezone }}</strong>)</p>
     {{-- @if($num_free_slots == 0)
@@ -38,10 +34,12 @@
 @section('calendar-top-labels')
     @php ($num_members = 0)
     @php ($userids_js = '')
+    @php ($userids_urlparams = '')
     @foreach ($members_discord as $member)
         @unless (array_key_exists('bot', $member['user']) && $member['user']['bot'])
             @php ($num_members++)
             @php ($userids_js = $userids_js.'"'.strval($member['user']['id']).'",')
+            @php ($userids_urlparams = $userids_urlparams.'&user_ids[]='.urlencode(strval($member['user']['id'])))
             <div class="profile small">
                 @if($member['nick'] != null) {{-- Nickname --}}
                     <p>{{ $member['nick'] }}</p>
@@ -62,7 +60,8 @@
     @endforeach
 @endsection
 @section('calendar-after')
-    <script>var calendar_userids = [{!! $userids_js !!}]; var calendar_timezone = "{{ $timezone }}";</script>
+    <script>var calendar_userids = [{!! $userids_js !!}]; var calendar_timezone = "{{ $timezone }}"; function calendar_get_daypreviewbg(date) { return "/api/calendars/img?date="+date+"&timezone={!! urlencode($timezone) . $userids_urlparams !!}" }</script>
+    <style>.day-preview { background-image: attr("data-bgimg"); }</style>
     <script src="{{asset('js/server_calendar.js')}}"></script>
 @endsection
 @section('calendar-cssvars')

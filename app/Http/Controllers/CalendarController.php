@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use \DateTime;
 use \DateTimeZone;
 
+use Intervention\Image\Facades\Image;
+
 /**
  * Handle Calendar event getting and organising.
  */
@@ -332,5 +334,25 @@ class CalendarController extends Controller
             $events[] = $busy_slots;
         }
         return ["date" => $request->input("date"), "events" => $events, "free_slots" => CalendarController::get_free_slots($events, 30)];
+    }
+
+    /**
+     * Get calendars for array of users (`user_ids` array parameter) on a specific day (`date` parameter, `timezone` parameter) returned as array of ["date" => (date given in), "free" => (free slots), "events" => [(events for 1 user), (another user...)]]].
+     * TODO: Pass min length of free slot
+     */
+    public function get_calendars_as_image(Request $request) {
+        $calendars = CalendarController::get_calendars_as_json($request);
+        if(key_exists("error", $calendars)) {
+            return $calendars;
+        }
+        $img = Image::canvas(100, 20, '#000000');
+        foreach($calendars["free_slots"] as $free_slot) {
+            // draw filled red rectangle
+            $img->rectangle($free_slot["start"] * (100/1440), 0, $free_slot["end"] * (100/1440), 19, function ($draw) {
+                $draw->background('#1b5e58');
+                $draw->border(1, '#2EC4B6');
+            });
+        }
+        return $img->response();
     }
 }

@@ -27,6 +27,16 @@ function seamless_load(path) {
             // Seamlessly load page in callback
             document.querySelector("main").innerHTML = this.responseText;
             document.querySelector("title").innerHTML = document.querySelector("main h1").innerHTML + " | Calendar Sync";
+            document.querySelector("header").classList.remove("open");
+            if(document.querySelector(".calendar") == undefined) {
+                document.querySelector("search").classList.add("disabled");
+            } else {
+                document.querySelector("search").classList.remove("disabled");
+                document.querySelector("search").scrollIntoView();
+            }
+            if(document.getElementById("filter_view_as").value == "summary") {
+                document.querySelector(".calendar-container").classList.add("summary");
+            }
             document.querySelectorAll("main script").forEach((elem) => {
                 // Credits: https://stackoverflow.com/a/26716182
                 if (elem.src != "") {

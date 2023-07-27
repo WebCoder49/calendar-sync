@@ -80,7 +80,7 @@
                 <h3>Time Zone</h3>
                 <p>
                     Choose your time zone here, and we'll take care of time conversion.<br/>
-                    <button onclick="document.getElementById('preferences_timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone; this.form.dispatchEvent(new Event("change")); return false;">Autodetect</button><br/>
+                    <button onclick="document.getElementById('preferences_timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone; this.form.dispatchEvent(new Event('change')); return false;">Autodetect</button><br/>
                     @if(Request::get("preferences_timezone") != null)
                         <input type="text" id="preferences_timezone" name="preferences_timezone" list="timezone_dropdown" placeholder="Select Manually" value="{{ Request::get("preferences_timezone") }}">
                     @else

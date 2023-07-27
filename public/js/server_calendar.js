@@ -1,3 +1,5 @@
+var day_preview_days = new Set();
+
 // calendar_userids array & calendar_timezone set in inline JS
 /* Load the calendar */
 function calendar_load(date) {
@@ -49,7 +51,7 @@ function calendar_load(date) {
             console.log("Couldn't load calendar:", request.responseText);
         }
     });
-    request.open("POST", "/api/calendars");
+    request.open("POST", "/api/calendars/json");
     request.setRequestHeader(
         "X-CSRF-TOKEN", document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     );
@@ -65,43 +67,86 @@ function calendar_load(date) {
         "timezone": calendar_timezone,
         "user_ids": calendar_userids
     }));
+
+    if(!day_preview_days.has(date)) {
+        // New week
+        day_preview_days.clear()
+        // Load day previews
+        date = new Date(date + "T00:00:00Z");
+        let daysSinceMonday = (date.getDay() + 6) % 7; // getDay gets days since Sunday
+        date.setDate(date.getDate() - daysSinceMonday);
+
+        for(let i = 0; i < 7; i++) {
+            document.getElementById("day-preview_date_" + i).innerText = date.getDate();
+            let imgElem = document.getElementById("day-preview_" + i);
+
+            let dateString = date.toISOString().split("T")[0];
+            day_preview_days.add(dateString);
+
+            imgElem.src = calendar_get_daypreviewbg(dateString);
+            if(i == daysSinceMonday) {
+                imgElem.parentElement.classList.add("today");
+            } else {
+                imgElem.parentElement.classList.remove("today");
+            }
+
+            imgElem.parentElement.setAttribute("data-date", dateString);
+
+            date.setDate(date.getDate() + 1); // Increment
+        }
+    } else {
+        date = new Date(date + "T00:00:00Z");
+        let daysSinceMonday = (date.getDay() + 6) % 7; // getDay gets days since Sunday
+        document.querySelector(".day-preview.today").classList.remove("today");
+        document.getElementById("day-preview_" + daysSinceMonday).parentElement.classList.add("today");
+    }
 }
 
-document.querySelector(".calendar-content").addEventListener("scroll", function() {
+document.querySelector(".calendar-content").onscroll = function() {
     document.querySelector(".calendar .side-labels").style.setProperty("--scrolled-by", document.querySelector(".calendar-content").scrollTop + "px");
-});
+};
 
-document.getElementById("filter_date").addEventListener("change", function() {
+document.getElementById("filter_date").onchange = function() {
     calendar_load(document.getElementById("filter_date").value);
-});
+};
 
-document.getElementById("goto_today").addEventListener("click", function() {
+document.getElementById("goto_today").onclick = function() {
     document.getElementById("filter_date").value = new Date().toISOString().split("T")[0]; // Turn into ISO string and remove time so yyyy-mm-dd.
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
-});
-document.getElementById("goto_prev").addEventListener("click", function() {
+};
+document.getElementById("goto_prevweek").onclick = function() {
     let date = new Date(document.getElementById("filter_date").value);
-    date.setDate(date.getDate() - 1);
+    date.setDate(date.getDate() - 7);
     document.getElementById("filter_date").value = date.toISOString().split("T")[0];
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
-});
-document.getElementById("goto_prevmonth").addEventListener("click", function() {
+};
+document.getElementById("goto_prevmonth").onclick = function() {
     let date = new Date(document.getElementById("filter_date").value);
     date.setMonth(date.getMonth() - 1);
     document.getElementById("filter_date").value = date.toISOString().split("T")[0];
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
-});
-document.getElementById("goto_next").addEventListener("click", function() {
+};
+document.getElementById("goto_nextweek").onclick = function() {
     let date = new Date(document.getElementById("filter_date").value);
-    date.setDate(date.getDate() + 1);
+    date.setDate(date.getDate() + 7);
     document.getElementById("filter_date").value = date.toISOString().split("T")[0];
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
-});
-document.getElementById("goto_nextmonth").addEventListener("click", function() {
+};
+document.getElementById("goto_nextmonth").onclick = function() {
     let date = new Date(document.getElementById("filter_date").value);
     date.setMonth(date.getMonth() + 1);
     document.getElementById("filter_date").value = date.toISOString().split("T")[0];
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
+};
+
+Array.from(document.getElementsByClassName("day-preview")).forEach(function(elem) {
+    elem.addEventListener("click", function() {
+        let date = this.getAttribute("data-date");
+        if(date != undefined) {
+            document.getElementById("filter_date").value = date;
+            document.getElementById("filter_date").dispatchEvent(new Event("change"));
+        }
+    }.bind(elem));
 });
 
 if(window.location.hash != "#" && window.location.hash != "") {

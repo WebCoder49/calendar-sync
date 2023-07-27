@@ -11,7 +11,7 @@ body {
 }
 
 .calendar-container {
-    --column-width-px: max(100px, calc((100vw - 160px) / var(--num-columns)));
+    --column-width-px: max(100px, calc((100vw - 370px) / var(--num-columns)));
 }
 
 
@@ -61,7 +61,8 @@ body {
 }
 
 .calendar-container {
-    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: auto;
 }
 
 .calendar {
@@ -90,7 +91,7 @@ body {
     /* 1440 min/day */
     column-gap: var(--column-gap-px, 10px);
 
-    height: calc(100vh - 450px);
+    /* height: calc(100vh - 300px); */
     margin: 0;
     padding: 0;
     overflow-x: visible;
@@ -169,8 +170,9 @@ body {
 }
 
 .calendar .free {
-    background-color: var(--accent-color-1);
-    color: var(--black);
+    background-color: var(--accent-color-1-darker);
+    border: 1px solid var(--accent-color-1);
+    color: white;
 
     border-radius: 0;
     padding: 5px;
@@ -199,6 +201,7 @@ body {
     width: 100%;
 
     display: block;
+    overflow-x: hidden;
 }
 
 .calendar-container.summary .calendar .top-labels {
@@ -216,27 +219,4 @@ body {
     margin: 10px;
     padding: 10px;
     border-radius: 10px;
-}
-
-.filter {
-    text-align: center;
-
-    padding: 10px;
-    margin: 10px;
-}
-
-.filter label {
-    display: inline-block;
-
-    width: min-content;
-    white-space: nowrap;
-    overflow: visible;
-    text-align: center;
-
-    font-size: 15px;
-    color: var(--white);
-}
-
-.filter select, .filter button, .filter input {
-    text-align: center;
 }

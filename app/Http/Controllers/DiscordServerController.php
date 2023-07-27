@@ -29,7 +29,7 @@ class DiscordServerController extends Controller
     }
 
     /**
-     * Display comparison calendar of members of the server by {id}, for day {date}.
+     * Display comparison calendar of members of the server by {id}.
      */
     public function server_calendar(Request $request, string $id) {
 
@@ -83,5 +83,19 @@ class DiscordServerController extends Controller
                 'timezone' => $timezone, 'num_unregistered' => $num_unregistered,
                 'free_slot_min_length' => 30]);
         }
+    }
+
+    /**
+     * Display comparison calendar of members of the server by {id}, for day {date}, as an image.
+     */
+    public function server_calendar_img(Request $request, string $id, string $date) {
+        $validator = Validator::make(["date" => $date], [
+            'date' => 'required|date_format:Y-m-d'
+        ]);
+        if ($validator->fails()) {
+            return (new ErrorMessage(null, "parameters_wrong", $validator->errors()->first()))->get_json();
+        }
+
+
     }
 }

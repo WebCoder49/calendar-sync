@@ -59,18 +59,18 @@ with AJAX --}}
             <h1>Calendar Sync</h1>
             <button id="toggle_header" onclick="document.querySelector('header').classList.toggle('open');">☰</button>
             <search class="disabled">
-                <label for="filter_date">Date<br/><input id="filter_date" type="date"/><br/><button id="goto_prevmonth">&laquo; Month</button><button id="goto_today">Today</button><button id="goto_nextmonth">Month &raquo;</button></label>
+                <label for="filter_date">Date<br/><input id="filter_date" type="date" title="Type Date to Load Calendar"/><br/><button id="goto_prevmonth" title="Previous Month">&laquo; Month</button><button id="goto_today">Today</button><button id="goto_nextmonth" title="Next Month">Month &raquo;</button></label>
                 <label for="filter_view_as">View As<br/><select id="filter_view_as" onchange="document.querySelector('.calendar-container').classList.toggle('summary')"><option value="calendar" selected>Calendar</option><option value="summary">Summary</option></select></label>
                 <label for="day-preview-container" id="day-preview-label"><br/>Week Summary (Click to Load Day)<br/><div id="day-preview-container">
-                    <button id="goto_prevweek">&lt;</button>
-                    <label for="day-preview_0" class="day-preview">Mon <span id="day-preview_date_0">--</span><br><img id="day-preview_0" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <label for="day-preview_1" class="day-preview">Tue <span id="day-preview_date_1">--</span><br><img id="day-preview_1" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <label for="day-preview_2" class="day-preview">Wed <span id="day-preview_date_2">--</span><br><img id="day-preview_2" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <label for="day-preview_3" class="day-preview">Thu <span id="day-preview_date_3">--</span><br><img id="day-preview_3" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <label for="day-preview_4" class="day-preview">Fri <span id="day-preview_date_4">--</span><br><img id="day-preview_4" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <label for="day-preview_5" class="day-preview">Sat <span id="day-preview_date_5">--</span><br><img id="day-preview_5" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <label for="day-preview_6" class="day-preview">Sun <span id="day-preview_date_6">--</span><br><img id="day-preview_6" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
-                    <button id="goto_nextweek">&gt;</button></div></label>
+                    <button id="goto_prevweek" title="Previous Week">&lt;</button>
+                    <label for="day-preview_0" class="day-preview" title="Click for Monday's Calendar">Mon <span id="day-preview_date_0">--</span><br><img id="day-preview_0" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <label for="day-preview_1" class="day-preview" title="Click for Tuesday's Calendar">Tue <span id="day-preview_date_1">--</span><br><img id="day-preview_1" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <label for="day-preview_2" class="day-preview" title="Click for Wednesday's Calendar">Wed <span id="day-preview_date_2">--</span><br><img id="day-preview_2" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <label for="day-preview_3" class="day-preview" title="Click for Thursday's Calendar">Thu <span id="day-preview_date_3">--</span><br><img id="day-preview_3" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <label for="day-preview_4" class="day-preview" title="Click for Friday's Calendar">Fri <span id="day-preview_date_4">--</span><br><img id="day-preview_4" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <label for="day-preview_5" class="day-preview" title="Click for Saturday's Calendar">Sat <span id="day-preview_date_5">--</span><br><img id="day-preview_5" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <label for="day-preview_6" class="day-preview" title="Click for Sunday's Calendar">Sun <span id="day-preview_date_6">--</span><br><img id="day-preview_6" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>
+                    <button id="goto_nextweek" title="Next Week">&gt;</button></div></label>
             </search>
         </hgroup>
         <main>

@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('discordusers', function (Blueprint $table) {
             $table->unsignedBigInteger('discord_id')->primary();
 
-            $table->unsignedSmallInteger('settings_activehours_start'); // UTC
-            $table->unsignedSmallInteger('settings_activehours_end'); // UTC
+            $table->unsignedSmallInteger('settings_activehours_start');
+            $table->unsignedSmallInteger('settings_activehours_end');
             $table->text('settings_preferences_timezone');
 
             $table->text('settings_calendar_selectedcalendars');

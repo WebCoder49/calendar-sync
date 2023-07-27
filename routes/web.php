@@ -6,6 +6,7 @@ use \App\SeamlessRouter;
 
 use \App\Http\Middleware\CheckDiscordLogin;
 
+use \App\Http\Controllers\CachingController;
 use \App\Http\Controllers\DiscordAuthController;
 use \App\Http\Controllers\CalAuthController;
 use \App\Http\Controllers\CalendarController;
@@ -40,7 +41,29 @@ Route::get('/busy', [CalendarController::class, 'test_busy_slots']);
 Route::get('/logout', [DiscordAuthController::class, 'logout']);
 
 SeamlessRouter::get('/', function () {
-    return view('demo');
+    return CachingController::slots_array2cache([
+        [
+            "start" => 600,
+            "end" => 660,
+            "description" => "10:00-11:00 (~1 hr)"
+        ],
+        [
+            "start" => 690,
+            "end" => 720,
+            "description" => "11:30-12:00 (30 min)"
+        ],
+        [
+            "start" => 960,
+            "end" => 1020,
+            "description" => "16:00-17:00 (~1 hr)"
+        ],
+        [
+            "start" => 1087,
+            "end" => 1170,
+            "description" => "18:07-19:30 (~1 hr)"
+        ]
+    ]);
+    // return view('demo');
 });
 
 SeamlessRouter::get('/server', [DiscordServerController::class, 'server_list'])->middleware(CheckDiscordLogin::class);

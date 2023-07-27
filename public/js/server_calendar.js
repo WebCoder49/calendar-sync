@@ -83,6 +83,7 @@ function calendar_load(date) {
             let dateString = date.toISOString().split("T")[0];
             day_preview_days.add(dateString);
 
+            imgElem.src = "/img/day-preview-placeholder.png";
             imgElem.src = calendar_get_daypreviewbg(dateString);
             if(i == daysSinceMonday) {
                 imgElem.parentElement.classList.add("today");

@@ -140,7 +140,7 @@ main, hgroup {
 hgroup {
     z-index: 3;
     position: sticky;
-    top: 0;
+    top: 10px;
 
     max-height: 200px;
     overflow: auto;
@@ -375,7 +375,7 @@ body.unloaded main {
     height: 100vh;
 }
 body.unloaded {
-    height: 100vh;
+    overflow-y: scroll;
 }
 
 #seamless-progress div {

@@ -114,7 +114,7 @@ body {
     width: 50px;
 
     position: absolute;
-    top: calc(-20px - var(--scrolled-by, 0px));
+    top: calc(-30px - var(--scrolled-by, 0px));
     left: -50px;
 
     font-size: 15px;

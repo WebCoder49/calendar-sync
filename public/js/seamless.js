@@ -13,7 +13,6 @@ function seamless_linkClicked(evt) {
 
 /* Seamlessly load this page. */
 function seamless_loadThisPage() {
-    document.body.classList.remove("unloaded");
     seamless_load(window.location.pathname + window.location.search + window.location.hash);
 }
 
@@ -26,6 +25,7 @@ function seamless_load(path) {
         if (request.readyState === XMLHttpRequest.DONE && request.status == 200) {
             // Seamlessly load page in callback
             document.querySelector("main").innerHTML = this.responseText;
+            document.body.classList.remove("unloaded");
             document.querySelector("title").innerHTML = document.querySelector("main h1").innerHTML + " | Calendar Sync";
             document.querySelector("header").classList.remove("open");
             if(document.querySelector(".calendar") == undefined) {

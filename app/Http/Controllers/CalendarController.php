@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\CachingController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CalAuthController;
 use App\Exceptions\ErrorMessage;
@@ -306,7 +305,6 @@ class CalendarController extends Controller
             // Until midnight if necessary
         }
         return $free_slots;
-        // return CachingController::cache2slots_array(CachingController::slots_array2cache($free_slots));
     }
 
     /**

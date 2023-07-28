@@ -19,6 +19,7 @@ with AJAX --}}
         <link rel="stylesheet" href="{{asset('css/calendar.css')}}">
 
         <script src="{{asset('js/seamless.js')}}"></script>
+        <script src="{{asset('js/common.js')}}"></script>
     </head>
     <body class="unloaded">
         <div id="seamless-progress">
@@ -32,9 +33,9 @@ with AJAX --}}
                 <a is="seamless-a" href="/settings">Settings</a>
             </nav>
             @if( session('discord.user.id') == null )
-                <form class="profile large loggedout" method="get" action="https://discord.com/api/v10/oauth2/authorize" onsubmit='if(Intl.DateTimeFormat().resolvedOptions().timeZone != undefined) document.getElementById("main_state").value += ":"+encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);'>
+                <form class="profile large loggedout" method="get" action="https://discord.com/api/v10/oauth2/authorize" onsubmit='document.getElementById("main_state").value += window.location.hash; if(Intl.DateTimeFormat().resolvedOptions().timeZone != undefined) document.getElementById("main_state").value += ":"+encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);'>
                     <!--CSRF Token and redirect URL as `State`-->
-                    <input type="hidden" name="state" id="main_state" value="{{ csrf_token() }}:{{ urlencode(str_replace("/_seamless", "", url()->current())) }}"/>
+                    <input type="hidden" name="state" id="main_state" value="{{ csrf_token() }}:{{ urlencode(str_replace("/_seamless", "", url()->full())) }}"/>
                     <!--Discord OAuth2 Parameters-->
                     <input type="hidden" name="client_id" value="{{ config('services.discord.client_id') }}"/>
                     <input type="hidden" name="redirect_uri" value="{{config('app.BASE_URL')}}/auth/"/>
@@ -55,11 +56,11 @@ with AJAX --}}
                 </div>
             @endif
         </header>
-        <hgroup>
+        <hgroup class="search-disabled">
             <h1>Calendar Sync</h1>
             <button id="toggle_header" onclick="document.querySelector('header').classList.toggle('open');">☰</button>
-            <search class="disabled">
-                <label for="filter_date">Date<br/><input id="filter_date" type="date" title="Type Date to Load Calendar"/><br/><button id="goto_prevmonth" title="Previous Month">&laquo; Month</button><button id="goto_today">Today</button><button id="goto_nextmonth" title="Next Month">Month &raquo;</button></label>
+            <search>
+                <label for="filter_date">Date<br/><input id="filter_date" type="date" title="Type Date to Load Calendar"/><br/><button id="goto_prevmonth" title="Previous Month">&laquo; Month</button><button id="goto_prevday" title="Previous Day">&laquo;</button><button id="goto_today">Today</button><button id="goto_nextday" title="Next Day">&raquo;</button><button id="goto_nextmonth" title="Next Month">Month &raquo;</button></label>
                 <label for="filter_view_as">View As<br/><select id="filter_view_as" onchange="document.querySelector('.calendar-container').classList.toggle('summary')"><option value="calendar" selected>Calendar</option><option value="summary">Summary</option></select></label>
                 <label for="day-preview-container" id="day-preview-label"><br/>Week Summary (Click to Load Day)<br/><div id="day-preview-container">
                     <button id="goto_prevweek" title="Previous Week">&lt;</button>

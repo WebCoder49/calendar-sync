@@ -184,6 +184,24 @@ body {
     grid-column-end: calc(var(--num-columns, 7) + 1);
 }
 
+.calendar #now-indicator {
+    background-color: var(--accent-color-3);
+
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+
+    height: 10px;
+    transform: translateY(-5px);
+
+    clip-path: polygon(0 0, 10px 4px, 100% 4px, 100% 6px, 10px 6px, 0 10px);
+
+    grid-row-start: calc(var(--time, 1) + 1);
+    grid-row-end: calc(var(--time, 1) + 1);
+    grid-column-start: 1;
+    grid-column-end: calc(var(--num-columns, 7) + 1);
+}
+
 /* .calendar-container.summary: only show free slots - TODO: Check if needed */
 .calendar-container.summary {
     display: block;
@@ -210,7 +228,7 @@ body {
 .calendar-container.summary .calendar .side-labels {
     display: none;
 }
-.calendar-container.summary .calendar-content .event {
+.calendar-container.summary .calendar-content .event, .calendar-container.summary .calendar-content #now-indicator {
     display: none;
 }
 .calendar-container.summary .calendar-content .free {

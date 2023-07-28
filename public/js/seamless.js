@@ -29,9 +29,9 @@ function seamless_load(path) {
             document.querySelector("title").innerHTML = document.querySelector("main h1").innerHTML + " | Calendar Sync";
             document.querySelector("header").classList.remove("open");
             if(document.querySelector(".calendar") == undefined) {
-                document.querySelector("search").classList.add("disabled");
+                document.querySelector("hgroup").classList.add("search-disabled");
             } else {
-                document.querySelector("search").classList.remove("disabled");
+                document.querySelector("hgroup").classList.remove("search-disabled");
                 document.querySelector("search").scrollIntoView();
             }
             if(document.getElementById("filter_view_as").value == "summary") {

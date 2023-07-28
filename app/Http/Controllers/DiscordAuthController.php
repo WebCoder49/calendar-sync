@@ -71,7 +71,7 @@ class DiscordAuthController extends Controller
                     } else {
                         // New user
                         SettingsController::create_new_user($user_info["id"], $timezone);
-                        return redirect("/settings?message=Please%20connect%20a%20calendar%20and%20check%20your%20preferences%20below,%20and%20then%20you're%20good%20to%20go!%20You%20can%20access%20this%20page%20at%20any%20time%20by%20clicking%20on%20'Settings'.");
+                        return redirect("/settings?redirecturl=".urlencode($redirecturl));
                     }
                 } else {
                     $msg = new ErrorMessage("discord", $user_info["error"], $user_info["error_description"]);

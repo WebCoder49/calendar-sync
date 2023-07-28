@@ -188,13 +188,21 @@ class SettingsController extends Controller
                     $selectedcalendars = implode(" ", $selectedcalendars);
                     SettingsController::save_calendar_settings($user_id, $selectedcalendars);
                 }
-
-                return redirect("settings/");
+                if($request->has('redirecturl')) {
+                    return redirect("settings?redirecturl=".urlencode($request->input('redirecturl')));
+                }
+                return redirect("settings");
             } else {
+                if($request->has('redirecturl')) {
+                    return redirect("settings?redirecturl=".urlencode($request->input('redirecturl'))."&message=We%20couldn't%20understand%20your%20timezone.%20Please%20select%20one%20from%20the%20dropdown.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
+                }
                 return redirect("settings?message=We%20couldn't%20understand%20your%20timezone.%20Please%20select%20one%20from%20the%20dropdown.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
             }
         } else {
             // Invalid
+            if($request->has('redirecturl')) {
+                return redirect("settings?redirecturl=".urlencode($request->input('redirecturl'))."&message=Your%20active%20hours%20are%20invalid.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
+            }
             return redirect("settings?message=Your%20active%20hours%20are%20invalid.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
         }
     }

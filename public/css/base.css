@@ -174,7 +174,7 @@ search select, search button, search input {
     text-align: center;
 }
 
-search.disabled {
+.search-disabled search {
     display: none;
 }
 
@@ -197,9 +197,15 @@ search.disabled {
     margin-left: auto;
     margin-right: auto;
 }
+#goto_prevday, #goto_nextday {
+    display: none;
+}
 @media screen and (max-width: 1050px) {
     #day-preview-label, #goto_prevmonth, #goto_nextmonth {
         display: none;
+    }
+    #goto_prevday, #goto_nextday {
+        display: inline-block;
     }
 }
 .day-preview img {
@@ -217,7 +223,6 @@ search.disabled {
 header:not(.open) {
     display: none;
 }
-
 @media screen and (min-width: 500px) {
     hgroup h1 {
         display: none;
@@ -239,6 +244,10 @@ header:not(.open) {
 
     hgroup {
         max-height: unset;
+    }
+
+    hgroup.search-disabled {
+        display: none;
     }
 }
 
@@ -389,6 +398,10 @@ body.unloaded {
 }
 
 .warning {
+    padding: 10px;
+    margin: 10px;
+    border-radius: 5px;
+
     text-align: center;
     font-weight: bold;
     color: var(--accent-color-3-lighter);

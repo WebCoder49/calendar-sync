@@ -10,6 +10,16 @@
     @endif
 
     <section class="settings">
+        @if(Request::get("redirecturl") != null)
+            <div class="form-div"> {{--TODO: Make default message then `onboarding` URL parameter --}}
+                <h2>Welcome to Calendar Sync!</h2>
+                <p class="warning">Please connect a calendar and check your preferences below, and then you're good to go! You can access this page at any time by clicking on 'Settings'.</p>
+                <form method="get" action="{{ Request::get("redirecturl") }}">
+                    <input type="submit" value="I've chosen my settings. Redirect me further."/>
+                </form>
+            </div>
+        @endif
+
         @if($calauth_type != "")
         <div class="form-div">
             <h2>You've connected {{ $calauth_type_readable }}</h2>
@@ -26,7 +36,7 @@
             </p>
             <form method="get" action="https://accounts.google.com/o/oauth2/v2/auth">
                 <!--CSRF Token and redirect URL as `State`-->
-                <input type="hidden" name="state" value="{{ csrf_token() }}:{{ urlencode(str_replace("/_seamless", "", url()->current())) }}"/>
+                <input type="hidden" name="state" value="{{ csrf_token() }}:{{ urlencode(str_replace("/_seamless", "", url()->full())) }}"/>
                 <!--Google OAuth2 Parameters-->
                 <input type="hidden" name="client_id" value="{{ config('services.ggl.client_id') }}"/>
                 <input type="hidden" name="redirect_uri" value="{{config('app.BASE_URL')}}/calauth/ggl/"/>

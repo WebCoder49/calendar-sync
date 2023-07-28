@@ -16,9 +16,16 @@
     </div> --}}
     @if($num_unregistered != 0)
         @if($num_unregistered == 1)
-            <p class="warning">1 user is unregistered and has not set up their calendar yet.</p>
+            <p class="warning">{{ $unregistered_usernames[0] }} is unregistered on Calendar Sync.</p>
         @else
-            <p class="warning">{{ $num_unregistered }} users are unregistered and have not set up their calendar yet.</p>
+            <div class="warning">
+                <details>
+                    <summary>{{ $num_unregistered }} users are unregistered on Calendar Sync. Click to view a list of their usernames.</summary>
+                    <pre>@foreach($unregistered_usernames as $username){{ $username }}
+@endforeach
+                    </pre>
+                </details>
+            </div>
         @endif
     @endif
     {{-- @php($num_free_slots = count($free_slots)) --}}
@@ -37,25 +44,27 @@
     @php ($userids_urlparams = '')
     @foreach ($members_discord as $member)
         @unless (array_key_exists('bot', $member['user']) && $member['user']['bot'])
-            @php ($num_members++)
-            @php ($userids_js = $userids_js.'"'.strval($member['user']['id']).'",')
-            @php ($userids_urlparams = $userids_urlparams.'&user_ids[]='.urlencode(strval($member['user']['id'])))
-            <div class="profile small">
-                @if($member['nick'] != null) {{-- Nickname --}}
-                    <p>{{ $member['nick'] }}</p>
-                @else
-                    <p>{{ isset($member["user"]["global_name"]) ? $member["user"]["global_name"] : $member["user"]["username"] }}</p>
-                @endif
-                @if($member['avatar'] != null) {{-- Server-Specific --}}
-                    <img src="https://cdn.discordapp.com/avatars/{{ $member['user']['id'] }}/{{ $member['avatar'] }}.png"/>
-                @else
-                    @if($member['user']['avatar'] != null)
-                        <img src="https://cdn.discordapp.com/avatars/{{ $member['user']['id'] }}/{{ $member['user']['avatar'] }}.png"/>
+            @if(!array_key_exists("unregistered", $member) || $member["unregistered"] == false)
+                @php ($num_members++)
+                @php ($userids_js = $userids_js.'"'.strval($member['user']['id']).'",')
+                @php ($userids_urlparams = $userids_urlparams.'&user_ids[]='.urlencode(strval($member['user']['id'])))
+                <div class="profile small">
+                    @if($member['nick'] != null) {{-- Nickname --}}
+                        <p>{{ $member['nick'] }}</p>
                     @else
-                        <img src="https://cdn.discordapp.com/embed/avatars/{{ ($member['user']['id'] >> 22) % 6 }}.png"/>
+                        <p>{{ isset($member["user"]["global_name"]) ? $member["user"]["global_name"] : $member["user"]["username"] }}</p>
                     @endif
-                @endif
-            </div>
+                    @if($member['avatar'] != null) {{-- Server-Specific --}}
+                        <img src="https://cdn.discordapp.com/avatars/{{ $member['user']['id'] }}/{{ $member['avatar'] }}.png"/>
+                    @else
+                        @if($member['user']['avatar'] != null)
+                            <img src="https://cdn.discordapp.com/avatars/{{ $member['user']['id'] }}/{{ $member['user']['avatar'] }}.png"/>
+                        @else
+                            <img src="https://cdn.discordapp.com/embed/avatars/{{ ($member['user']['id'] >> 22) % 6 }}.png"/>
+                        @endif
+                    @endif
+                </div>
+            @endif
         @endunless
     @endforeach
 @endsection

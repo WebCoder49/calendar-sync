@@ -32,7 +32,6 @@ class DiscordServerController extends Controller
      * Display comparison calendar of members of the server by {id}.
      */
     public function server_calendar(Request $request, string $id) {
-
         $timezone = SettingsController::get_current_user_settings($request)->settings_preferences_timezone;
         // Get server info from only allowed route
         $servers = Http::withHeaders([
@@ -64,23 +63,26 @@ class DiscordServerController extends Controller
             }
 
             $num_unregistered = 0;
+            $unregistered_usernames = [];
 
             // $members_discord is discord info of all members
-            foreach($members_discord as $member_discord) {
+            foreach($members_discord as &$member_discord) {
                 if(array_key_exists('bot', $member_discord['user']) && $member_discord['user']['bot']) {
                     continue;
                 }
 
                 $settings = SettingsController::get_user_settings($member_discord['user']['id']);
-                if($settings == null) {
+                if($settings == null) { // No account
+                    $member_discord["unregistered"] = true;
                     $num_unregistered++;
+                    $unregistered_usernames[] = isset($member_discord["user"]["global_name"]) ? $member_discord["user"]["global_name"] : $member_discord["user"]["username"];
                 }
             }
 
             // TODO: Multiple Pages; Agree to access on server first; channel-specific; choose users to show
             return view('server_calendar', [
                 'server' => $server, 'members_discord' => $members_discord,
-                'timezone' => $timezone, 'num_unregistered' => $num_unregistered,
+                'timezone' => $timezone, 'num_unregistered' => $num_unregistered, 'unregistered_usernames' => $unregistered_usernames,
                 'free_slot_min_length' => 30]);
         }
     }

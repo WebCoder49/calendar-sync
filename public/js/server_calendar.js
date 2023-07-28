@@ -1,6 +1,13 @@
 var day_preview_days = new Set();
 
 // calendar_userids array & calendar_timezone set in inline JS
+
+/* Get current time as minutes since midnight */
+function calendar_gettime() {
+    let date = new Date();
+    return (date.getHours()*60) + date.getMinutes();
+}
+
 /* Load the calendar */
 function calendar_load(date) {
     window.location.hash = date;
@@ -46,6 +53,14 @@ function calendar_load(date) {
 
                     calendar_gui.append(slot_gui);
                 });
+
+                if(response["date"] == new Date().toISOString().split("T")[0]) {
+                    // Today - show now indicator
+                    let now_indicator = document.createElement("div");
+                    now_indicator.id = "now-indicator";
+                    now_indicator.style.setProperty("--time", calendar_gettime());
+                    calendar_gui.append(now_indicator);
+                }
             }
         } else {
             console.log("Couldn't load calendar:", request.responseText);
@@ -72,32 +87,32 @@ function calendar_load(date) {
         // New week
         day_preview_days.clear()
         // Load day previews
-        date = new Date(date + "T00:00:00Z");
-        let daysSinceMonday = (date.getDay() + 6) % 7; // getDay gets days since Sunday
-        date.setDate(date.getDate() - daysSinceMonday);
+        dateObj = new Date(date + "T00:00:00Z");
+        let daysSinceMonday = (dateObj.getDay() + 6) % 7; // getDay gets days since Sunday
+        dateObj.setDate(dateObj.getDate() - daysSinceMonday);
 
         for(let i = 0; i < 7; i++) {
-            document.getElementById("day-preview_date_" + i).innerText = date.getDate();
+            document.getElementById("day-preview_date_" + i).innerText = dateObj.getDate();
             let imgElem = document.getElementById("day-preview_" + i);
 
-            let dateString = date.toISOString().split("T")[0];
-            day_preview_days.add(dateString);
+            let dateStr = dateObj.toISOString().split("T")[0];
+            day_preview_days.add(dateStr);
 
             imgElem.src = "/img/day-preview-placeholder.png";
-            imgElem.src = calendar_get_daypreviewbg(dateString);
+            imgElem.src = calendar_get_daypreviewbg(dateStr);
             if(i == daysSinceMonday) {
                 imgElem.parentElement.classList.add("today");
             } else {
                 imgElem.parentElement.classList.remove("today");
             }
 
-            imgElem.parentElement.setAttribute("data-date", dateString);
+            imgElem.parentElement.setAttribute("data-date", dateStr);
 
-            date.setDate(date.getDate() + 1); // Increment
+            dateObj.setDate(dateObj.getDate() + 1); // Increment
         }
     } else {
-        date = new Date(date + "T00:00:00Z");
-        let daysSinceMonday = (date.getDay() + 6) % 7; // getDay gets days since Sunday
+        dateObj = new Date(date + "T00:00:00Z");
+        let daysSinceMonday = (dateObj.getDay() + 6) % 7; // getDay gets days since Sunday
         document.querySelector(".day-preview.today").classList.remove("today");
         document.getElementById("day-preview_" + daysSinceMonday).parentElement.classList.add("today");
     }
@@ -115,6 +130,12 @@ document.getElementById("goto_today").onclick = function() {
     document.getElementById("filter_date").value = new Date().toISOString().split("T")[0]; // Turn into ISO string and remove time so yyyy-mm-dd.
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
 };
+document.getElementById("goto_prevday").onclick = function() {
+    let date = new Date(document.getElementById("filter_date").value);
+    date.setDate(date.getDate() - 1);
+    document.getElementById("filter_date").value = date.toISOString().split("T")[0];
+    document.getElementById("filter_date").dispatchEvent(new Event("change"));
+};
 document.getElementById("goto_prevweek").onclick = function() {
     let date = new Date(document.getElementById("filter_date").value);
     date.setDate(date.getDate() - 7);
@@ -124,6 +145,12 @@ document.getElementById("goto_prevweek").onclick = function() {
 document.getElementById("goto_prevmonth").onclick = function() {
     let date = new Date(document.getElementById("filter_date").value);
     date.setMonth(date.getMonth() - 1);
+    document.getElementById("filter_date").value = date.toISOString().split("T")[0];
+    document.getElementById("filter_date").dispatchEvent(new Event("change"));
+};
+document.getElementById("goto_nextday").onclick = function() {
+    let date = new Date(document.getElementById("filter_date").value);
+    date.setDate(date.getDate() + 1);
     document.getElementById("filter_date").value = date.toISOString().split("T")[0];
     document.getElementById("filter_date").dispatchEvent(new Event("change"));
 };

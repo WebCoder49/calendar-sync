@@ -1,4 +1,4 @@
-var day_preview_days = new Set();
+var week_preview_days = new Set();
 
 // calendar_userids array & calendar_timezone set in inline JS
 
@@ -8,10 +8,35 @@ function calendar_gettime() {
     return (date.getHours()*60) + date.getMinutes();
 }
 
+/* Convert a number time (e.g. 435, number of minutes since midnight) to a string time (e.g. "07:15") */
+function calendar_time_num2str(num_time) {
+    hours = Math.floor(num_time / 60);
+    mins = num_time % 60;
+    return hours.toString().padStart(2, '0') + ":" + mins.toString().padStart(2, '0');
+    // return hours.toString() + ":" + mins.toString();
+}
+/* Convert a number duration of minutes (e.g. 435) to a readable string */
+function calendar_duration_num2str(num_time) {
+    hours = Math.floor(num_time / 60);
+    mins = num_time % 60;
+    if(hours == 0) {
+        return `${mins}min`;
+    }
+    if(mins == 0) {
+        return `${hours}hr`;
+    }
+    return `${hours}hr, ${mins}min`;
+}
+
+/* Generate the description for a free slot based on the slot JSON. */
+function calendar_freeslotdescription(slot) { // TODO: Finish with function for duration
+    return `${calendar_time_num2str(slot["start"])}-${calendar_time_num2str(slot["end"])} (${calendar_duration_num2str(slot["end"]-slot["start"])})`;
+}
+
 /* Load the calendar */
 function calendar_load(date) {
     window.location.hash = date;
-    is_loading = date; // Block earlier loads
+    let is_loading = date; // Block earlier loads
 
     let calendar_gui = document.querySelector(".calendar-content");
     calendar_gui.innerText = "";
@@ -49,7 +74,7 @@ function calendar_load(date) {
                     slot_gui.style.setProperty("--starttime", free_slot["start"]);
                     slot_gui.style.setProperty("--endtime", free_slot["end"]);
 
-                    // slot_gui.innerText = free_slot["description"]; - TODO: Calculate description
+                    slot_gui.innerText = calendar_freeslotdescription(free_slot);
 
                     calendar_gui.append(slot_gui);
                 });
@@ -83,9 +108,9 @@ function calendar_load(date) {
         "user_ids": calendar_userids
     }));
 
-    if(!day_preview_days.has(date)) {
+    if(!week_preview_days.has(date)) {
         // New week
-        day_preview_days.clear()
+        week_preview_days.clear()
         // Load day previews
         dateObj = new Date(date + "T00:00:00Z");
         let daysSinceMonday = (dateObj.getDay() + 6) % 7; // getDay gets days since Sunday
@@ -96,7 +121,7 @@ function calendar_load(date) {
             let imgElem = document.getElementById("day-preview_" + i);
 
             let dateStr = dateObj.toISOString().split("T")[0];
-            day_preview_days.add(dateStr);
+            week_preview_days.add(dateStr);
 
             imgElem.src = "/img/day-preview-placeholder.png";
             imgElem.src = calendar_get_daypreviewbg(dateStr);

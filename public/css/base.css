@@ -208,6 +208,10 @@ search select, search button, search input {
         display: inline-block;
     }
 }
+
+.day-preview.today {
+    pointer-events: none; /* Avoid double-clicks */
+}
 .day-preview img {
     height: 20px;
     width: 100px;

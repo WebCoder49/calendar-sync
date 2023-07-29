@@ -1,10 +1,10 @@
 /* Seamless links that link to other pages without unloading */
-function seamless_linkClicked(evt) {
-    if(new URL(evt.target.href).origin == new URL(window.location).origin) {
+function seamless_linkClicked(target_a) {
+    if(new URL(target_a.href).origin == new URL(window.location).origin) {
         // Same-site so seamless
-        window.history.pushState({}, "", evt.target.href);
+        window.history.pushState({}, "", target_a.href);
 
-        seamless_load(evt.target.pathname + evt.target.search + evt.target.hash);
+        seamless_load(target_a.pathname + target_a.search + target_a.hash);
 
         return false; // Not default behaviour
     }
@@ -72,8 +72,8 @@ class SeamlessAnchorElement extends HTMLAnchorElement {
     constructor() {
         super();
         this.onclick = function(evt) {
-            return seamless_linkClicked(evt);
-        };
+            return seamless_linkClicked(this);
+        }.bind(this);
     }
 }
 

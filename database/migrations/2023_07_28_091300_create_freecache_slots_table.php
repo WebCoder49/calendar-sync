@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('freecache_slots', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('cache_id'); // ID of the freecache_caches cache that this slot belongs to
-            $table->unsignedSmallInteger('start'); // Start time (mins-since-midnight) of free slot
-            $table->unsignedSmallInteger('end'); // End time (mins-since-midnight) of free slot
+            $table->unsignedSmallInteger('starttime'); // Start time (mins-since-midnight) of free slot
+            $table->unsignedSmallInteger('endtime'); // End time (mins-since-midnight) of free slot
         });
     }
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\DBController;
 use App\Http\Controllers\CalAuthController;
 use App\Exceptions\ErrorMessage;
 
@@ -32,7 +32,7 @@ class CalendarController extends Controller
                 'User-Agent' => config('app.USER_AGENT'),
             ])->asForm()->get('https://www.googleapis.com/calendar/v3/users/me/calendarList/primary');
             if($primary_calendar->successful()) {
-                SettingsController::save_calendar_settings($user_id, $primary_calendar["id"]);
+                DBController::save_calendar_settings($user_id, $primary_calendar["id"]);
             } else {
                 return new ErrorMessage("ggl", $primary_calendar["error"]["code"], $primary_calendar["error"]["message"]);
             }
@@ -137,7 +137,7 @@ class CalendarController extends Controller
     /**
      * Get all slots when the user's calendar notes it is busy, from $start_day (inclusive) to $end_day (inclusive),
      * as well as out-of-active-hours busy slots. Days are formatted yyyy-mm-dd.
-     * Return in format [(day: )[(busy slot: )["start": integer minute time, "end": integer minute time, "description": readable], another busy slot, ...], another day, ...]
+     * Return in format [(day: )[(busy slot: )["start" => integer minute time, "end" => integer minute time], another busy slot, ...], another day, ...]
      */
     public static function get_busy_slots_by_day($user_id, $user_settings, $time_info) {
         // Get time info specific to this user
@@ -224,7 +224,7 @@ class CalendarController extends Controller
      */
     public static function get_busy_slots_from_api($user_id, string $start_timestamp, string $end_timestamp, string $timezone) {
         $type_and_access_token = CalAuthController::get_type_and_access_token($user_id);
-        if(SettingsController::get_calauth_type($user_id) == "") return null; // No calendar connected
+        if(DBController::get_calauth_type($user_id) == "") return null; // No calendar connected
 
         if($type_and_access_token instanceof ErrorMessage) {
             $type_and_access_token->add_description_context("Could not get access token: ");
@@ -239,7 +239,7 @@ class CalendarController extends Controller
                 "timeMin" => $start_timestamp,
                 "timeMax" => $end_timestamp,
                 "timeZone" => $timezone,
-                "items" => CalendarController::generate_ggl_selectedcalendars(SettingsController::get_calendar_settings($user_id)->settings_calendar_selectedcalendars),
+                "items" => CalendarController::generate_ggl_selectedcalendars(DBController::get_calendar_settings($user_id)->settings_calendar_selectedcalendars),
             ]);
 
             if($freebusy_response->successful()) {
@@ -274,7 +274,7 @@ class CalendarController extends Controller
 
     /**
      * Turn an array of busy slots into free slots.
-     * $busy_slots_by_user is a 2D array - row=user; column=slot: ["start" => (start time), "end" => (end time), "description" => (readable description of slot length and time)].
+     * $busy_slots_by_user is a 2D array - row=user; column=slot: ["start" => (start time), "end" => (end time)].
      * $free_slot_min_length is in minutes.
      */
     public static function get_free_slots($busy_slots_by_user, $free_slot_min_length) {
@@ -287,9 +287,9 @@ class CalendarController extends Controller
             if(($slot["start"] - $latest_endofbusy) >= $free_slot_min_length) {
                 // Add this free slot found to the result
                 if($slot["start"] - $latest_endofbusy >= 60) {
-                    $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"], "description" => CalendarController::time_num2str($latest_endofbusy)."-".CalendarController::time_num2str($slot["start"])." (~".round(($slot["start"]-$latest_endofbusy) / 60)." hr)"];
+                    $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
                 } else {
-                    $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"], "description" => CalendarController::time_num2str($latest_endofbusy)."-".CalendarController::time_num2str($slot["start"])." (".($slot["start"]-$latest_endofbusy)." min)"];
+                    $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
                 }
                 $latest_endofbusy = $slot["end"];
             } else if($slot["end"] > $latest_endofbusy) {
@@ -298,13 +298,44 @@ class CalendarController extends Controller
         }
         if(1440 - $latest_endofbusy >= $free_slot_min_length) {
             if(1440 - $latest_endofbusy >= 60) {
-                $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440, "description" => CalendarController::time_num2str($latest_endofbusy)."-midnight (~".round((1440-$latest_endofbusy) / 60)." hr)"];
+                $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440];
             } else {
-                $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440, "description" => CalendarController::time_num2str($latest_endofbusy)."-midnight (".(1440-$latest_endofbusy)." min)"];
+                $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440];
             }
             // Until midnight if necessary
         }
         return $free_slots;
+    }
+
+    /**
+     * Get all mutual free slots for users in array $user_ids
+     * Return in format [(free slot: )["start" => mins-since-midnight time, "end" => mins-since-midnight time], another free slot, ...]
+     */
+    public static function get_free_slots_only_by_day($user_ids, $date, $timezone) {
+        // TODO!!!!! Always Cache from direct load calendar
+        $cache = DBController::get_freecache_id_if_present($date, $timezone, implode(",", $user_ids), 600); // 10min
+        if($cache["new"]) {
+            // Create cache and return free slots
+            $time_info = CalendarController::get_time_info($date, $date, $timezone); // For building calendar in correct timezone
+
+            $events = [];
+            foreach($user_ids as $user_id) {
+                $busy_slots = CalendarController::get_busy_slots_by_day($user_id, DBController::get_user_settings($user_id), $time_info);
+                if($busy_slots instanceof ErrorMessage) {
+                    $busy_slots->add_description_context("Could not get busy slots: ");
+                    return $busy_slots;
+                }
+                $events[] = $busy_slots[0];
+            }
+            $free_slots = CalendarController::get_free_slots($events, 30);
+
+            DBController::set_freecache_slots($cache["id"], $free_slots);
+
+            return $free_slots;
+        } else {
+            // Return free slots from cache
+            return DBController::get_freecache_slots($cache["id"]);
+        }
     }
 
     /**
@@ -326,14 +357,19 @@ class CalendarController extends Controller
         $events = [];
         $user_ids = $request->input("user_ids");
         foreach($user_ids as $user_id) {
-            $busy_slots = CalendarController::get_busy_slots_by_day($user_id, SettingsController::get_user_settings($user_id), $time_info)[0];
+            $busy_slots = CalendarController::get_busy_slots_by_day($user_id, DBController::get_user_settings($user_id), $time_info);
             if($busy_slots instanceof ErrorMessage) {
                 $busy_slots->add_description_context("Could not get busy slots: ");
                 return $busy_slots->get_json();
             }
-            $events[] = $busy_slots;
+            $events[] = $busy_slots[0];
         }
-        return ["date" => $request->input("date"), "events" => $events, "free_slots" => CalendarController::get_free_slots($events, 30)];
+        $free_slots = CalendarController::get_free_slots($events, 30);
+
+        // Add to cache
+        DBController::set_freecache_slots(DBController::get_freecache_id_always_new($request->input("date"), $request->input("timezone"), implode(",", $user_ids)), $free_slots);
+
+        return ["date" => $request->input("date"), "events" => $events, "free_slots" => $free_slots];
     }
 
     /**
@@ -341,15 +377,26 @@ class CalendarController extends Controller
      * TODO: Pass min length of free slot
      */
     public function get_calendars_as_image(Request $request) {
-        $calendars = CalendarController::get_calendars_as_json($request);
-        if(key_exists("error", $calendars)) {
-            return $calendars;
+        // Get free slots
+        $validator = Validator::make($request->all(), [
+            'date' => 'required|date_format:Y-m-d',
+            'timezone' => 'required|timezone:all',
+            'user_ids.*' => 'required|digits_between:1,20'
+        ]);
+        if ($validator->fails()) {
+            return (new ErrorMessage(null, "parameters_wrong", $validator->errors()->first()))->get_json();
         }
+        $free_slots = CalendarController::get_free_slots_only_by_day($request->input("user_ids"), $request->input("date"), $request->input("timezone"));
+        if($free_slots instanceof ErrorMessage) {
+            $free_slots->add_description_context("Could not get free slots: ");
+            return $free_slots->get_json();
+        }
+        // Draw image
         $img = Image::canvas(100, 20, '#000000');
-        foreach($calendars["free_slots"] as $free_slot) {
+        foreach($free_slots as $free_slot) {
             // draw filled red rectangle
             $img->rectangle($free_slot["start"] * (100/1440), 0, $free_slot["end"] * (100/1440), 19, function ($draw) {
-                $draw->background('#1b5e58');
+                $draw->background('#1B5E58');
                 $draw->border(1, '#2EC4B6');
             });
         }

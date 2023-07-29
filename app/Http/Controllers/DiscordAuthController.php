@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\DBController;
 use App\Exceptions\ErrorMessage;
 
 use Illuminate\Support\Facades\Http;
@@ -65,12 +65,12 @@ class DiscordAuthController extends Controller
                     $request->session()->put('discord.user.global_name', isset($user_info["global_name"]) ? $user_info["global_name"] : $user_info["username"]);
 
                     /* Initialise settings */
-                    if(SettingsController::user_registered($user_info["id"])) {
+                    if(DBController::user_registered($user_info["id"])) {
                         // Returning user
                         return redirect()->away($redirecturl);
                     } else {
                         // New user
-                        SettingsController::create_new_user($user_info["id"], $timezone);
+                        DBController::create_new_user($user_info["id"], $timezone);
                         return redirect("/settings?redirecturl=".urlencode($redirecturl));
                     }
                 } else {

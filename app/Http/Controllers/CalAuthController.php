@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\DiscordAuthController;
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\DBController;
 use App\Exceptions\ErrorMessage;
 
 use Illuminate\Support\Facades\Http;
@@ -57,7 +57,7 @@ class CalAuthController extends Controller
      * Revoke and remove OAuth2 tokens to disconnect the currently-running calendar.
      */
     public function disconnect(Request $request) {
-        $calendar_type = SettingsController::get_calauth_type(DiscordAuthController::get_current_user_id($request));
+        $calendar_type = DBController::get_calauth_type(DiscordAuthController::get_current_user_id($request));
         if($calendar_type == "ggl") {
             return CalAuthController::revoke_and_remove_tokens($request, "ggl", "https://oauth2.googleapis.com/revoke");
         }
@@ -74,8 +74,8 @@ class CalAuthController extends Controller
      * refreshing the access_token if required.
      */
     public static function get_type_and_access_token($user_id) {
-        $type = SettingsController::get_calauth_type($user_id);
-        $tokens_record = SettingsController::get_calauth_tokens($user_id);
+        $type = DBController::get_calauth_type($user_id);
+        $tokens_record = DBController::get_calauth_tokens($user_id);
         if($type == "ggl") {
             if($tokens_record->calauth_expires_at <= time() + 60) {
                 // Generate new access token from refresh token
@@ -124,11 +124,11 @@ class CalAuthController extends Controller
                     'redirect_uri' => config('app.BASE_URL').'/calauth/'.$calendar_type.'/',
                 ]);
                 if($accesstoken_response->successful()) {
-                    $old_calendar_type = SettingsController::get_calauth_type($user_id);
+                    $old_calendar_type = DBController::get_calauth_type($user_id);
                     if($old_calendar_type != "") {
                         return (new ErrorMessage(null, "calendar_already_connected", CalAuthController::calauthTypeReadable($old_calendar_type)." already connected; you must disconnect it from settings first before connecting a different calendar."))->get_view($request, true);
                     }
-                    SettingsController::save_calauth($user_id, $calendar_type, $accesstoken_response["access_token"], $accesstoken_response["refresh_token"], time() + $accesstoken_response["expires_in"]);
+                    DBController::save_calauth($user_id, $calendar_type, $accesstoken_response["access_token"], $accesstoken_response["refresh_token"], time() + $accesstoken_response["expires_in"]);
 
                     $error = CalendarController::set_default_settings($user_id, $calendar_type, $accesstoken_response["access_token"]);
                     if($error instanceof ErrorMessage) {
@@ -154,7 +154,7 @@ class CalAuthController extends Controller
     public function revoke_and_remove_tokens(Request $request, string $calendar_type, string $revoke_token_url) {
         $user_id = DiscordAuthController::get_current_user_id($request);
         // Disconnect a calendar and revoke its tokens.
-        $tokens_record = SettingsController::get_calauth_tokens($user_id);
+        $tokens_record = DBController::get_calauth_tokens($user_id);
 
         if($tokens_record->calauth_expires_at < time()) {
             // Access token expired, so revoke refresh token
@@ -164,7 +164,7 @@ class CalAuthController extends Controller
                 'token' => $tokens_record->calauth_refresh_token,
             ]);
             if($revoketoken_response->successful()) {
-                SettingsController::remove_calauth_tokens_and_settings($user_id);
+                DBController::remove_calauth_tokens_and_settings($user_id);
                 return redirect('settings/');
             } else {
                 $msg = new ErrorMessage($calendar_type, $revoketoken_response["error"], $revoketoken_response["error_description"]);
@@ -180,7 +180,7 @@ class CalAuthController extends Controller
             ]);
 
             if($revoketoken_response->successful()) {
-                SettingsController::remove_calauth_tokens_and_settings($user_id);
+                DBController::remove_calauth_tokens_and_settings($user_id);
                 return redirect('settings/');
             } else {
                 $msg = new ErrorMessage($calendar_type, $revoketoken_response["error"], $revoketoken_response["error_description"]);
@@ -205,7 +205,7 @@ class CalAuthController extends Controller
             'grant_type' => "refresh_token",
         ]);
         if($revoketoken_response->successful()) {
-            SettingsController::save_calauth($user_id, $calendar_type, $revoketoken_response["access_token"], $refresh_token, time() + $revoketoken_response["expires_in"]);
+            DBController::save_calauth($user_id, $calendar_type, $revoketoken_response["access_token"], $refresh_token, time() + $revoketoken_response["expires_in"]);
             return $revoketoken_response["access_token"];
         } else {
             return new ErrorMessage("ggl", $revoketoken_response["error"], $revoketoken_response["error_description"]);

@@ -49,7 +49,7 @@ function calendar_load(date) {
                     slot_gui.style.setProperty("--starttime", free_slot["start"]);
                     slot_gui.style.setProperty("--endtime", free_slot["end"]);
 
-                    slot_gui.innerText = free_slot["description"];
+                    // slot_gui.innerText = free_slot["description"]; - TODO: Calculate description
 
                     calendar_gui.append(slot_gui);
                 });

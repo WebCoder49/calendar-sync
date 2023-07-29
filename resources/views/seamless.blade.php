@@ -57,8 +57,8 @@ with AJAX --}}
             @endif
         </header>
         <hgroup class="search-disabled">
-            <h1>Calendar Sync</h1>
             <button id="toggle_header" onclick="document.querySelector('header').classList.toggle('open');">☰</button>
+            <h1>Calendar Sync</h1>
             <search>
                 <label for="filter_date">Date<br/><input id="filter_date" type="date" title="Type Date to Load Calendar"/><br/><button id="goto_prevmonth" title="Previous Month">&laquo; Month</button><button id="goto_prevday" title="Previous Day">&laquo;</button><button id="goto_today">Today</button><button id="goto_nextday" title="Next Day">&raquo;</button><button id="goto_nextmonth" title="Next Month">Month &raquo;</button></label>
                 <label for="filter_view_as">View As<br/><select id="filter_view_as" onchange="document.querySelector('.calendar-container').classList.toggle('summary')"><option value="calendar" selected>Calendar</option><option value="summary">Summary</option></select></label>

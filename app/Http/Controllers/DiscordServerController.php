@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\DBController;
 use App\Http\Controllers\DiscordAuthController;
 use App\Http\Controllers\CalendarController;
 use App\Exceptions\ErrorMessage;
@@ -32,7 +32,7 @@ class DiscordServerController extends Controller
      * Display comparison calendar of members of the server by {id}.
      */
     public function server_calendar(Request $request, string $id) {
-        $timezone = SettingsController::get_current_user_settings($request)->settings_preferences_timezone;
+        $timezone = DBController::get_current_user_settings($request)->settings_preferences_timezone;
         // Get server info from only allowed route
         $servers = Http::withHeaders([
             'Authorization' => 'Bearer ' . $request->session()->get('discord.accesstoken'),
@@ -71,7 +71,7 @@ class DiscordServerController extends Controller
                     continue;
                 }
 
-                $settings = SettingsController::get_user_settings($member_discord['user']['id']);
+                $settings = DBController::get_user_settings($member_discord['user']['id']);
                 if($settings == null) { // No account
                     $member_discord["unregistered"] = true;
                     $num_unregistered++;

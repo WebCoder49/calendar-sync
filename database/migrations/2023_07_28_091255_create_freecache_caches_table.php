@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('freecache_caches', function (Blueprint $table) {
             $table->id();
-            $table->date('date'); // Date that this cache represents (yyyy-mm-dd)
+            $table->date('daterepresented'); // Date that this cache represents (yyyy-mm-dd)
             $table->text('timezone'); // Timezone that this cache represents (e.g. Europe/London)
             $table->text('discordusers'); // Comma-separated list of Discord users whose mutual free time this cache represents
             $table->unsignedInteger('created_at')->default(0); // Unix timestamp of when this cache was created

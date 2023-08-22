@@ -1,4 +1,5 @@
 @extends('layouts.content')
+@section('icon')&#xe8b8;@endsection
 @section('title')
     Settings
 @endsection
@@ -12,7 +13,7 @@
     <section class="settings">
         @if(Request::get("redirecturl") != null)
             <div class="form-div"> {{--TODO: Make default message then `onboarding` URL parameter --}}
-                <h2>Welcome to Calendar Sync!</h2>
+                <h2><span class="material-symbols-rounded">&#xea65;</span> Welcome to Calendar Sync!</h2>
                 <p class="warning">Please connect a calendar and check your preferences below, and then you're good to go! You can access this page at any time by clicking on 'Settings'.</p>
                 <form method="get" action="{{ Request::get("redirecturl") }}">
                     <input type="submit" value="I've chosen my settings. Redirect me further."/>
@@ -22,7 +23,7 @@
 
         @if($calauth_type != "")
         <div class="form-div">
-            <h2>You've connected {{ $calauth_type_readable }}</h2>
+            <h2><span class="material-symbols-rounded">&#xe157;</span> You've connected {{ $calauth_type_readable }}</h2>
             <p>Your calendar and related settings will all be disconnected from Calendar Sync if you click the button below.</p>
             <form method="get" action="/calauth/disconnect">
                 <input type="submit" value="Disconnect this Calendar"/>
@@ -30,7 +31,7 @@
         </div>
         @else
         <div class="form-div">
-            <h2>Connect a Calendar</h2>
+            <h2><span class="material-symbols-rounded">&#xe16f;</span> Connect a Calendar</h2>
             <p>
                 Connect your account to Google Calendar to synchronise your events. TODO: Outlook / Apple / Research other calendars [TODO]
             </p>
@@ -52,7 +53,7 @@
         <form onchange="settings_markAsChanged(this);" action="" method="post">
             @csrf
             <div>
-                <h2>Calendar Settings</h2>
+                <h2><span class="material-symbols-rounded">&#xebcc;</span> Calendar Settings</h2>
                 <h3>Active Hours</h3>
                 <p>
                     All times outside this range will be marked as busy, so you won't be disturbed at night. These times are local to your time zone [TODO].<br/>
@@ -81,12 +82,12 @@
                 <input type="submit" disabled value="Saved" onclick="settings_markAsInProgress(this)"/>
             </div>
             <div>
-                <h2>Privacy</h2>
+                <h2><span class="material-symbols-rounded">&#xe897;</span> Privacy</h2>
                 <p>TODO</p>
                 <input type="submit" disabled value="Saved" onclick="settings_markAsInProgress(this)"/>
             </div>
             <div>
-                <h2>Preferences</h2>
+                <h2><span class="material-symbols-rounded">&#xe429;</span> Preferences</h2>
                 <h3>Time Zone</h3>
                 <p>
                     Choose your time zone here, and we'll take care of time conversion.<br/>

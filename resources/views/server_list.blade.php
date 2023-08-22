@@ -1,4 +1,5 @@
 @extends('layouts.content')
+@section('icon')&#xe7ef;@endsection
 @section('title')
     Your Servers
 @endsection

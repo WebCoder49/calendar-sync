@@ -81,7 +81,7 @@ class CalAuthController extends Controller
                 // Generate new access token from refresh token
                 $access_token = CalAuthController::refresh_access_token($user_id, "ggl", $tokens_record->calauth_refresh_token, "https://oauth2.googleapis.com/token", config('services.ggl.client_id'), config('services.ggl.client_secret'));
                 if($access_token instanceof ErrorMessage) {
-                    $access_token->add_description_context("Could not get refresh token:");
+                    $access_token->add_description_context("Could not refresh token: ");
                     return $access_token;
                 }
                 return ["type" => "ggl", "access_token" => $access_token];

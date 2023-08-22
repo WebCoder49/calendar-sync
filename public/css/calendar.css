@@ -134,6 +134,16 @@ body {
     margin: 0;
     padding: 0;
 }
+@media screen and (min-width: 500px) {
+    .calendar .top-labels.sticky {
+        position: fixed;
+        top: 15px;
+        padding-top: 15px;
+        left: unset;
+        transform: none;
+        background-color: var(--black);
+    }
+}
 
 .calendar .top-labels div {
     max-width: unset;

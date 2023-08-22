@@ -147,6 +147,9 @@ hgroup {
 
     background-color: var(--accent-color-1-transparent);
     backdrop-filter: blur(50px);
+
+    transition: transform 0.25s, background-color 0.25s;
+    transform: translateY(0);
 }
 
 hgroup h1 {
@@ -220,6 +223,9 @@ search select, search button, search input {
 
     cursor: pointer;
 }
+#day-preview-container:not(:hover) .day-preview.today, #day-preview-container .day-preview:hover {
+    color: var(--accent-color-3-lighter);
+}
 #day-preview-container:not(:hover) .day-preview.today img, #day-preview-container .day-preview:hover img {
     filter: hue-rotate(180deg);
 }
@@ -248,6 +254,13 @@ header:not(.open) {
 
     hgroup {
         max-height: unset;
+    }
+    hgroup.closed:not(:hover) {
+        transform: translateY(-100%);
+        background-color: var(--accent-color-1-darkest);
+    }
+    hgroup.closed:hover {
+        transform: translateY(-20px);
     }
 
     hgroup.search-disabled {
@@ -416,4 +429,10 @@ body.unloaded {
     position: fixed;
     top: 10px;
     left: 10px;
+}
+
+.material-symbols-rounded {
+    vertical-align: middle;
+    font-size: 200%;
+    margin-right: 0.25em;
 }

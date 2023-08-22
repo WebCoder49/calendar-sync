@@ -1,4 +1,5 @@
 @extends('layouts.calendar')
+@section('icon')&#xebcc;@endsection
 @section('title')
     {{ $server["name"] }}
 @endsection

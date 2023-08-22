@@ -1,4 +1,4 @@
-{{-- Empty page to seamlessly load page content separately
+{{-- Empty-content page to seamlessly load page content separately
 with AJAX --}}
 
 <!DOCTYPE html>
@@ -15,6 +15,9 @@ with AJAX --}}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
 
+        <!--Icons-->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,0,0" />
+
         <link rel="stylesheet" href="{{asset('css/base.css')}}">
         <link rel="stylesheet" href="{{asset('css/calendar.css')}}">
 
@@ -28,9 +31,9 @@ with AJAX --}}
         <header>
             <nav>
                 <h1>Calendar Sync</h1>
-                <a is="seamless-a" href="/">Home</a>
-                <a is="seamless-a" href="/server">Servers</a>
-                <a is="seamless-a" href="/settings">Settings</a>
+                <a is="seamless-a" href="/"><span class="material-symbols-rounded">&#xe88a;</span> Home</a>
+                <a is="seamless-a" href="/server"><span class="material-symbols-rounded">&#xe7ef;</span> Servers</a>
+                <a is="seamless-a" href="/settings"><span class="material-symbols-rounded">&#xe8b8;</span> Settings</a>
             </nav>
             @if( session('discord.user.id') == null )
                 <form class="profile large loggedout" method="get" action="https://discord.com/api/v10/oauth2/authorize" onsubmit='document.getElementById("main_state").value += window.location.hash; if(Intl.DateTimeFormat().resolvedOptions().timeZone != undefined) document.getElementById("main_state").value += ":"+encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);'>
@@ -52,7 +55,7 @@ with AJAX --}}
                     @else
                         <img src="https://cdn.discordapp.com/embed/avatars/{{ (session('discord.user.id') >> 22) % 6 }}.png"/>
                     @endisset
-                    <a href="/logout">Log out</a>
+                    <a href="/logout"><span class="material-symbols-rounded">&#xe9ba;</span> Log out</a>
                 </div>
             @endif
         </header>
@@ -60,8 +63,8 @@ with AJAX --}}
             <button id="toggle_header" onclick="document.querySelector('header').classList.toggle('open');">☰</button>
             <h1>Calendar Sync</h1>
             <search>
-                <label for="filter_date">Date<br/><input id="filter_date" type="date" title="Type Date to Load Calendar"/><br/><button id="goto_prevmonth" title="Previous Month">&laquo; Month</button><button id="goto_prevday" title="Previous Day">&laquo;</button><button id="goto_today">Today</button><button id="goto_nextday" title="Next Day">&raquo;</button><button id="goto_nextmonth" title="Next Month">Month &raquo;</button></label>
-                <label for="filter_view_as">View As<br/><select id="filter_view_as" onchange="document.querySelector('.calendar-container').classList.toggle('summary')"><option value="calendar" selected>Calendar</option><option value="summary">Summary</option></select></label>
+                <label for="filter_date">Date<br/><input id="filter_date" type="date" title="Type Date to Load Calendar"/><br/><button id="goto_prevmonth" title="Previous Month"><span class='material-symbols-rounded'>&#xeac3;</span> Month</button><button id="goto_prevday" title="Previous Day"><span class='material-symbols-rounded'>&#xe408;</span></button><button id="goto_today"><span class='material-symbols-rounded'>&#xe8df;</span> Today</button><button id="goto_nextday" title="Next Day"><span class='material-symbols-rounded'>&#xe409;</span></button><button id="goto_nextmonth" title="Next Month"><span class='material-symbols-rounded'>&#xeac9;</span> Month</button></label>
+                <label for="filter_view_as">View As (click)<br/><button id="filter_view_as" title="Click to change view" onclick="this.value = (Number(this.value) + 1) % 2; this.innerHTML = [`<span class='material-symbols-rounded'>&#xe935;</span> Calendar`, `<span class='material-symbols-rounded'>&#xe8fe;</span> Summary`][this.value]; document.querySelector('.calendar-container').classList.toggle('summary');"><span class='material-symbols-rounded'>&#xe935;</span> Calendar</button></label>
                 <label for="day-preview-container" id="day-preview-label"><br/>Week Summary (Click to Load Day)<br/><div id="day-preview-container">
                     <button id="goto_prevweek" title="Previous Week">&lt;</button>
                     <label for="day-preview_0" class="day-preview" title="Click for Monday's Calendar">Mon <span id="day-preview_date_0">--</span><br><img id="day-preview_0" src="{{ asset('img/day-preview-placeholder.png') }}"/></label>

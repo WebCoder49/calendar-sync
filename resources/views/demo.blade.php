@@ -1,4 +1,5 @@
 @extends('layouts.content')
+@section('icon')&#xe88a;@endsection
 @section('title', 'Dashboard')
 
 @section('content')

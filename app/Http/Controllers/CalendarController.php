@@ -275,33 +275,25 @@ class CalendarController extends Controller
     /**
      * Turn an array of busy slots into free slots.
      * $busy_slots_by_user is a 2D array - row=user; column=slot: ["start" => (start time), "end" => (end time)].
-     * $free_slot_min_length is in minutes.
+
      */
-    public static function get_free_slots($busy_slots_by_user, $free_slot_min_length) {
+    public static function get_free_slots($busy_slots_by_user) {
         $busy_slots = array_merge(...$busy_slots_by_user);
         usort($busy_slots, [CalendarController::class, "compare_events"]);
 
         $free_slots = [];
         $latest_endofbusy = 0; // Latest time (mins-after-midnight) where busy slot ends, so far
         foreach($busy_slots as $slot) {
-            if(($slot["start"] - $latest_endofbusy) >= $free_slot_min_length) {
+            if($slot["start"] > $latest_endofbusy) {
                 // Add this free slot found to the result
-                if($slot["start"] - $latest_endofbusy >= 60) {
-                    $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
-                } else {
-                    $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
-                }
+                $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
                 $latest_endofbusy = $slot["end"];
             } else if($slot["end"] > $latest_endofbusy) {
                 $latest_endofbusy = $slot["end"];
             }
         }
-        if(1440 - $latest_endofbusy >= $free_slot_min_length) {
-            if(1440 - $latest_endofbusy >= 60) {
-                $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440];
-            } else {
-                $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440];
-            }
+        if(1440 > $latest_endofbusy) {
+            $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440];
             // Until midnight if necessary
         }
         return $free_slots;
@@ -327,7 +319,7 @@ class CalendarController extends Controller
                 }
                 $events[] = $busy_slots[0];
             }
-            $free_slots = CalendarController::get_free_slots($events, 30);
+            $free_slots = CalendarController::get_free_slots($events);
 
             DBController::set_freecache_slots($cache["id"], $free_slots);
 
@@ -364,7 +356,7 @@ class CalendarController extends Controller
             }
             $events[] = $busy_slots[0];
         }
-        $free_slots = CalendarController::get_free_slots($events, 30);
+        $free_slots = CalendarController::get_free_slots($events);
 
         // Add to cache
         DBController::set_freecache_slots(DBController::get_freecache_id_always_new($request->input("date"), $request->input("timezone"), implode(",", $user_ids)), $free_slots);

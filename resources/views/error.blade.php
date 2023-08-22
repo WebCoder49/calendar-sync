@@ -1,4 +1,5 @@
 @extends('layouts.content')
+@section('icon')&#xe868;@endsection
 @section('title')
     @isset($error_source){{ $error_source }} @endisset{{ $error_id }}
 @endsection

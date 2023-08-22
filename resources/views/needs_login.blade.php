@@ -1,4 +1,5 @@
 @extends('layouts.content')
+@section('icon')&#xf042;@endsection
 @section('title', 'Log In To Continue')
 @section('content')
     <p style="text-align: center;">You need to be authenticated with Discord to view this page.</p>

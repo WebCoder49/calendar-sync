@@ -26,13 +26,12 @@ function seamless_load(path) {
             // Seamlessly load page in callback
             document.querySelector("main").innerHTML = this.responseText;
             document.body.classList.remove("unloaded");
-            document.querySelector("title").innerHTML = document.querySelector("main h1").innerHTML + " | Calendar Sync";
+            document.querySelector("title").innerHTML = document.querySelector("main title").innerHTML;
             document.querySelector("header").classList.remove("open");
             if(document.querySelector(".calendar") == undefined) {
                 document.querySelector("hgroup").classList.add("search-disabled");
             } else {
                 document.querySelector("hgroup").classList.remove("search-disabled");
-                document.querySelector("search").scrollIntoView();
             }
             if(document.getElementById("filter_view_as").value == "summary") {
                 document.querySelector(".calendar-container").classList.add("summary");

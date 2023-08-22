@@ -1,4 +1,5 @@
 @extends('layouts.content')
+@section('icon')&#xf06c;@endsection
 @section('title')
     {{ $server["name"] }}
 @endsection

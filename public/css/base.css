@@ -111,7 +111,7 @@ header {
     overflow-y: auto;
 
     width: 100%; /* if screen small */
-    height: 100%;
+    height: calc(100% - 250px);
 
     background-color: var(--black-transparent);
     backdrop-filter: blur(20px);
@@ -123,12 +123,12 @@ nav {
     text-align: center;
     justify-content: center;
 
-    overflow-y: auto;
     width: calc(100% - 32px);
 }
 
 nav h1 {
     padding: 16px;
+    display: none; /* On small screens */
 }
 
 main, hgroup {
@@ -241,6 +241,10 @@ header:not(.open) {
     header {
         width: 200px;
         padding-top: 10px;
+        height: calc(100% - 10px);
+    }
+    nav h1 {
+        display: block;
     }
     header:not(.open) {
         display: block;

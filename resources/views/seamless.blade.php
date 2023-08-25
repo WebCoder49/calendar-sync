@@ -25,6 +25,7 @@ with AJAX --}}
         <script src="{{asset('js/common.js')}}"></script>
     </head>
     <body class="unloaded">
+        <div style="z-index: 1000; font-size: 200%; background-color: red; color: white; font-family: monospace; position: fixed; bottom: 0; padding: 10px; margin: 0; left: 0; width: 100%; text-align: center;">Warning and Disclaimer: This web-app is nowhere near finished; I give you no promise of privacy or a smooth experience. If you are my friend, please feel free to give it a try / pentest it, but if you are someone on the open web, please <b>don't log in</b>. I am probably writing commands in the server right now.</div>
         <div id="seamless-progress">
             <div></div>
         </div>

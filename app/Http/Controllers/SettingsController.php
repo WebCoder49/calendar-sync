@@ -14,84 +14,86 @@ use Illuminate\Http\Request;
 class SettingsController extends Controller
 {
     /**
-     * Display settings page without any user input, from a GET request.
+     * @http
+     * Displays settings page without any user input, from a GET request.
      */
     public function get(Request $request) {
-        $user_id = DiscordAuthController::get_current_user_id($request);
-        $settings_record = DBController::get_user_settings($user_id);
-        $calauth_type = DBController::get_calauth_type($user_id);
-        if($calauth_type != "") {
-            $calendars_available = CalendarController::get_calendars_available($user_id);
-            if($calendars_available instanceof ErrorMessage) {
-                return $calendars_available->get_view($request, false);
+        $userID = DiscordAuthController::getCurrentUserID($request);
+        $settingsRecord = DBController::getUserSettings($userID);
+        $calauthType = DBController::getCalauthType($userID);
+        if($calauthType != "") {
+            $calendarsAvailable = CalendarController::getCalendarsAvailable($userID);
+            if($calendarsAvailable instanceof ErrorMessage) {
+                return $calendarsAvailable->getView($request, false);
             }
-            $calendar_settings_record = DBController::get_calendar_settings($user_id);
+            $calendarSettingsRecord = DBController::getCalendarSettings($userID);
             return view('settings', [
-                "activehours_start" => CalendarController::time_num2str($settings_record->settings_activehours_start),
-                "activehours_end" => CalendarController::time_num2str($settings_record->settings_activehours_end),
-                "preferences_timezone" => $settings_record->settings_preferences_timezone,
+                "activeHoursStart" => CalendarController::timeNum2Str($settingsRecord->settingsActiveHoursStart),
+                "activeHoursEnd" => CalendarController::timeNum2Str($settingsRecord->settingsActiveHoursEnd),
+                "preferencesTimezone" => $settingsRecord->settingsPreferencesTimezone,
 
-                "calendar_selectedcalendars" => explode(" ", $calendar_settings_record->settings_calendar_selectedcalendars),
+                "calendarSelectedCalendars" => explode(" ", $calendarSettingsRecord->settingsCalendarSelectedCalendars),
 
-                "timezone_list" => timezone_identifiers_list(),
-                "calauth_type" => $calauth_type,
+                "timezoneList" => timezone_identifiers_list(),
+                "calauthType" => $calauthType,
 
-                "calauth_type_readable" => CalAuthController::calauthTypeReadableWithArticle($calauth_type),
-                "calendars_available" => $calendars_available]);
+                "calauthTypeReadable" => CalauthController::calauthTypeReadableWithArticle($calauthType),
+                "calendarsAvailable" => $calendarsAvailable]);
         }
         return view('settings', [
-            "activehours_start" => CalendarController::time_num2str($settings_record->settings_activehours_start),
-            "activehours_end" => CalendarController::time_num2str($settings_record->settings_activehours_end),
-            "preferences_timezone" => $settings_record->settings_preferences_timezone,
+            "activeHoursStart" => CalendarController::timeNum2Str($settingsRecord->settingsActiveHoursStart),
+            "activeHoursEnd" => CalendarController::timeNum2Str($settingsRecord->settingsActiveHoursEnd),
+            "preferencesTimezone" => $settingsRecord->settingsPreferencesTimezone,
 
-            "timezone_list" => timezone_identifiers_list(),
-            "calauth_type" => $calauth_type]);
+            "timezoneList" => timezone_identifiers_list(),
+            "calauthType" => $calauthType]);
     }
 
     /**
-     * Save settings info then display settings page, from a POST request.
+     * @http
+     * Saves settings info then display settings page, from a POST request.
      */
     public function post(Request $request) {
-        $user_id = DiscordAuthController::get_current_user_id($request);
+        $userID = DiscordAuthController::getCurrentUserID($request);
         // Active hours
-        $activehours_start = CalendarController::time_str2num($request->input('activehours_start'));
-        $activehours_end = CalendarController::time_str2num($request->input('activehours_end'));
-        $preferences_timezone = $request->input('preferences_timezone');
-        if($activehours_start < 1440 && $activehours_start >= 0 && $activehours_end < 1440) {
-            if(in_array($preferences_timezone, timezone_identifiers_list())) {
+        $activeHoursStart = CalendarController::timeStr2Num($request->input('activeHoursStart'));
+        $activeHoursEnd = CalendarController::timeStr2Num($request->input('activeHoursEnd'));
+        $preferencesTimezone = $request->input('preferencesTimezone');
+        if($activeHoursStart < 1440 && $activeHoursStart >= 0 && $activeHoursEnd < 1440) {
+            if(in_array($preferencesTimezone, timezone_identifiers_list())) {
                 // Valid
-                DBController::set_user_settings($user_id, $activehours_start, $activehours_end, $preferences_timezone);
+                DBController::saveUserSettings($userID, $activeHoursStart, $activeHoursEnd, $preferencesTimezone);
 
-                if(DBController::get_calauth_type($user_id) != "") {
+                if(DBController::getCalauthType($userID) != "") {
                     /* Calendar Settings */
                     // Selected calendars
-                    $calendars_available = CalendarController::get_calendars_available(DiscordAuthController::get_current_user_id($request));
+                    $calendarsAvailable = CalendarController::getCalendarsAvailable(DiscordAuthController::getCurrentUserID($request));
                     $selectedcalendars = [];
-                    foreach($calendars_available as $calendar) {
+                    foreach($calendarsAvailable as $calendar) {
                         $id = $calendar["id"];
                         if($request->has(str_replace('.', '_', 'calendar_selectedcalendars_'.$id))) {
                             $selectedcalendars[] = $id;
                         }
                     }
                     $selectedcalendars = implode(" ", $selectedcalendars);
-                    DBController::save_calendar_settings($user_id, $selectedcalendars);
+                    DBController::saveCalendarSettings($userID, $selectedcalendars);
                 }
-                if($request->has('redirecturl')) {
-                    return redirect("settings?redirecturl=".urlencode($request->input('redirecturl')));
+                if($request->has('redirectURL')) {
+                    return redirect("settings?redirectURL=".urlencode($request->input('redirectURL')));
                 }
                 return redirect("settings");
             } else {
-                if($request->has('redirecturl')) {
-                    return redirect("settings?redirecturl=".urlencode($request->input('redirecturl'))."&message=We%20couldn't%20understand%20your%20timezone.%20Please%20select%20one%20from%20the%20dropdown.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
+                if($request->has('redirectURL')) {
+                    return redirect("settings?redirectURL=".urlencode($request->input('redirectURL'))."&message=We%20couldn't%20understand%20your%20timezone.%20Please%20select%20one%20from%20the%20dropdown.&activeHoursStart=".$request->input('activeHoursStart')."&activeHoursEnd=".$request->input('activeHoursEnd')."&preferencesTimezone=".$request->input('preferencesTimezone'));
                 }
-                return redirect("settings?message=We%20couldn't%20understand%20your%20timezone.%20Please%20select%20one%20from%20the%20dropdown.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
+                return redirect("settings?message=We%20couldn't%20understand%20your%20timezone.%20Please%20select%20one%20from%20the%20dropdown.&activeHoursStart=".$request->input('activeHoursStart')."&activeHoursEnd=".$request->input('activeHoursEnd')."&preferencesTimezone=".$request->input('preferencesTimezone'));
             }
         } else {
             // Invalid
-            if($request->has('redirecturl')) {
-                return redirect("settings?redirecturl=".urlencode($request->input('redirecturl'))."&message=Your%20active%20hours%20are%20invalid.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
+            if($request->has('redirectURL')) {
+                return redirect("settings?redirectURL=".urlencode($request->input('redirectURL'))."&message=Your%20active%20hours%20are%20invalid.&activeHoursStart=".$request->input('activeHoursStart')."&activeHoursEnd=".$request->input('activeHoursEnd')."&preferencesTimezone=".$request->input('preferencesTimezone'));
             }
-            return redirect("settings?message=Your%20active%20hours%20are%20invalid.&activehours_start=".$request->input('activehours_start')."&activehours_end=".$request->input('activehours_end')."&preferences_timezone=".$request->input('preferences_timezone'));
+            return redirect("settings?message=Your%20active%20hours%20are%20invalid.&activeHoursStart=".$request->input('activeHoursStart')."&activeHoursEnd=".$request->input('activeHoursEnd')."&preferencesTimezone=".$request->input('preferencesTimezone'));
         }
     }
 }

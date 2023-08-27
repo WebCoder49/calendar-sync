@@ -43,8 +43,8 @@ with AJAX --}}
                     <!--CSRF Token and redirect URL as `State`-->
                     <input type="hidden" name="state" id="main_state" value="{{ csrf_token() }}:{{ urlencode(str_replace("/_seamless", "", url()->full())) }}"/>
                     <!--Discord OAuth2 Parameters-->
-                    <input type="hidden" name="client_id" value="{{ config('services.discord.client_id') }}"/>
-                    <input type="hidden" name="redirect_uri" value="{{config('app.BASE_URL')}}/auth/"/>
+                    <input type="hidden" name="client_id" value="{{ config('services.discord.clientID') }}"/>
+                    <input type="hidden" name="redirect_uri" value="{{config('app.url')}}/auth/"/>
                     <input type="hidden" name="response_type" value="code"/>
                     <input type="hidden" name="scope" placeholder="Scope" value="identify guilds guilds.members.read"/>
                     <!--Submit-->

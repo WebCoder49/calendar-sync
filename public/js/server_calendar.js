@@ -1,24 +1,24 @@
-var week_preview_days = new Set();
+var weekPreviewDays = new Set();
 
-// calendar_userids array & calendar_timezone set in inline JS
+// calendar_userIDs array & calendar_timezone set in inline JS
 
 /* Get current time as minutes since midnight */
-function calendar_gettime() {
+function calendar_getTime() {
     let date = new Date();
     return (date.getHours()*60) + date.getMinutes();
 }
 
 /* Convert a number time (e.g. 435, number of minutes since midnight) to a string time (e.g. "07:15") */
-function calendar_time_num2str(num_time) {
-    hours = Math.floor(num_time / 60);
-    mins = num_time % 60;
+function calendar_timeNum2Str(numTime) {
+    hours = Math.floor(numTime / 60);
+    mins = numTime % 60;
     return hours.toString().padStart(2, '0') + ":" + mins.toString().padStart(2, '0');
     // return hours.toString() + ":" + mins.toString();
 }
 /* Convert a number duration of minutes (e.g. 435) to a readable string */
-function calendar_duration_num2str(num_time) {
-    hours = Math.floor(num_time / 60);
-    mins = num_time % 60;
+function calendar_durationNum2Str(numTime) {
+    hours = Math.floor(numTime / 60);
+    mins = numTime % 60;
     if(hours == 0) {
         return `${mins}min`;
     }
@@ -29,18 +29,17 @@ function calendar_duration_num2str(num_time) {
 }
 
 /* Generate the description for a free slot based on the slot JSON. */
-function calendar_freeslotdescription(slot) { // TODO: Finish with function for duration
-    return `${calendar_time_num2str(slot["start"])}-${calendar_time_num2str(slot["end"])} (${calendar_duration_num2str(slot["end"]-slot["start"])})`;
+function calendar_freeSlotDescription(slot) { // TODO: Finish with function for duration
+    return `${calendar_timeNum2Str(slot["start"])}-${calendar_timeNum2Str(slot["end"])} (${calendar_durationNum2Str(slot["end"]-slot["start"])})`;
 }
 
 /* Load the calendar */
 function calendar_load(date) {
     window.location.hash = date;
-    let is_loading = date; // Block earlier loads
+    let isLoading = date; // Block earlier loads
 
-    let calendar_gui = document.querySelector(".calendar-content");
-    calendar_gui.innerText = "";
-    calendar_gui.classList.add("loading");
+    let calendarGUI = document.querySelector(".calendar-content");
+    calendarGUI.classList.add("loading");
 
     let request = new XMLHttpRequest();
     request.addEventListener("load", function() {
@@ -50,41 +49,42 @@ function calendar_load(date) {
                 console.log("Error when loading calendar:", response["error"]);
                 return;
             }
-            if(response["date"] == is_loading) { // This is the date currently being loaded - don't want earlier load to override
-                let calendar_gui = document.querySelector(".calendar-content");
-                calendar_gui.classList.remove("loading");
+            if(response["date"] == isLoading) { // This is the date currently being loaded - don't want earlier load to override
+                let calendarGUI = document.querySelector(".calendar-content");
+                calendarGUI.innerText = "";
+                calendarGUI.classList.remove("loading");
 
                 let events = response["events"];
-                events.forEach((user_events, user_i) => {
-                    user_events.forEach((event) => {
-                        let event_gui = document.createElement("div");
-                        event_gui.classList.add("event");
-                        event_gui.classList.add(event["type"]);
-                        event_gui.style.setProperty("--starttime", event["start"]);
-                        event_gui.style.setProperty("--endtime", event["end"]);
-                        event_gui.style.setProperty("--col", user_i);
+                events.forEach((userEvents, userI) => {
+                    userEvents.forEach((event) => {
+                        let eventGUI = document.createElement("div");
+                        eventGUI.classList.add("event");
+                        eventGUI.classList.add(event["type"]);
+                        eventGUI.style.setProperty("--starttime", event["start"]);
+                        eventGUI.style.setProperty("--endtime", event["end"]);
+                        eventGUI.style.setProperty("--col", userI);
 
-                        calendar_gui.append(event_gui);
+                        calendarGUI.append(eventGUI);
                     });
                 });
-                let free_slots = response["free_slots"];
-                free_slots.forEach((free_slot) => {
-                    let slot_gui = document.createElement("div");
-                    slot_gui.classList.add("free");
-                    slot_gui.style.setProperty("--starttime", free_slot["start"]);
-                    slot_gui.style.setProperty("--endtime", free_slot["end"]);
+                let freeSlots = response["freeSlots"];
+                freeSlots.forEach((freeSlot) => {
+                    let slotGUI = document.createElement("div");
+                    slotGUI.classList.add("free");
+                    slotGUI.style.setProperty("--starttime", freeSlot["start"]);
+                    slotGUI.style.setProperty("--endtime", freeSlot["end"]);
 
-                    slot_gui.innerText = calendar_freeslotdescription(free_slot);
+                    slotGUI.innerText = calendar_freeSlotDescription(freeSlot);
 
-                    calendar_gui.append(slot_gui);
+                    calendarGUI.append(slotGUI);
                 });
 
                 if(response["date"] == new Date().toISOString().split("T")[0]) {
                     // Today - show now indicator
-                    let now_indicator = document.createElement("div");
-                    now_indicator.id = "now-indicator";
-                    now_indicator.style.setProperty("--time", calendar_gettime());
-                    calendar_gui.append(now_indicator);
+                    let nowIndicator = document.createElement("div");
+                    nowIndicator.id = "now-indicator";
+                    nowIndicator.style.setProperty("--time", calendar_getTime());
+                    calendarGUI.append(nowIndicator);
                 }
             }
         } else {
@@ -105,12 +105,12 @@ function calendar_load(date) {
     request.send(JSON.stringify({
         "date": date,
         "timezone": calendar_timezone,
-        "user_ids": calendar_userids
+        "userIDs": calendar_userIDs
     }));
 
-    if(!week_preview_days.has(date)) {
+    if(!weekPreviewDays.has(date)) {
         // New week
-        week_preview_days.clear()
+        weekPreviewDays.clear()
         // Load day previews
         dateObj = new Date(date + "T00:00:00Z");
         let daysSinceMonday = (dateObj.getDay() + 6) % 7; // getDay gets days since Sunday
@@ -121,10 +121,10 @@ function calendar_load(date) {
             let imgElem = document.getElementById("day-preview_" + i);
 
             let dateStr = dateObj.toISOString().split("T")[0];
-            week_preview_days.add(dateStr);
+            weekPreviewDays.add(dateStr);
 
             imgElem.src = "/img/day-preview-placeholder.png";
-            imgElem.src = calendar_get_daypreviewbg(dateStr);
+            imgElem.src = calendar_getDayPreviewBG(dateStr);
             if(i == daysSinceMonday) {
                 imgElem.parentElement.classList.add("today");
             } else {

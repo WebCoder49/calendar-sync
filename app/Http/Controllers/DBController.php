@@ -7,186 +7,229 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 /**
- * Handle all database operations from one place.
+ * Handles all database operations.
  */
 class DBController extends Controller
 {
     /* -----------------------------------------------
-     * --------------Discordusers---------------------
+     * --------------DiscordUsers---------------------
      * ---------------------------------------------*/
-
     /**
-     * Get Calendar-related settings that cannot be accessed when no calendar is connected.
+     * Gets Calendar-related settings that cannot be accessed when no calendar is connected.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID)
+     * @return mixed Record of {settingsCalendarSelectedCalendars => The IDs of the selected calauth calendars, joined by " ".}
      */
-    public static function get_calendar_settings($id) {
-        return DB::select('SELECT settings_calendar_selectedcalendars FROM discordusers WHERE discord_id = ?',
+    public static function getCalendarSettings(string $id) {
+        return DB::select('SELECT settingsCalendarSelectedCalendars FROM discordUsers WHERE discordID = ?',
             [$id]
         )[0];
     }
 
     /**
-     * Save Calendar-related settings that cannot be accessed when no calendar is connected.
+     * Saves Calendar-related settings that cannot be accessed when no calendar is connected.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID)
+     * @param string $settingsCalendarSelectedCalendars The IDs of the selected calauth calendars, joined by " ".
      */
-    public static function save_calendar_settings($id, $settings_calendar_selectedcalendars) {
-        DB::update('UPDATE discordusers SET settings_calendar_selectedcalendars = ? WHERE discord_id = ?',
-            [$settings_calendar_selectedcalendars, $id]
+    public static function saveCalendarSettings(string $id, string $settingsCalendarSelectedCalendars) {
+        DB::update('UPDATE discordUsers SET settingsCalendarSelectedCalendars = ? WHERE discordID = ?',
+            [$settingsCalendarSelectedCalendars, $id]
         );
     }
 
     /**
-     * Save Calendar authentication type and tokens. $expires_at is Unix timestamp of when access token needs to be refreshed.
+     * Saves Calendar authentication type and tokens.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID)
+     * @param string $type The calauth type as a 3-letter abbreviation.
+     * @param string $accessToken Calauth OAuth2 access token.
+     * @param string $refreshToken Calauth OAuth2 refresh token.
+     * @param string $expiresAt When the access token expires, as a Unix timestamp.
      */
-    public static function save_calauth($id, string $type, string $access_token, string $refresh_token, string $expires_at) {
-        DB::update('UPDATE discordusers SET calauth_type = ?, calauth_access_token = ?, calauth_refresh_token = ?, calauth_expires_at = ? WHERE discord_id = ?',
-            [$type, $access_token, $refresh_token, $expires_at, $id]
+    public static function saveCalauth(string $id, string $type, string $accessToken, string $refreshToken, string $expiresAt) {
+        DB::update('UPDATE discordUsers SET calauthType = ?, calauthAccessToken = ?, calauthRefreshToken = ?, calauthExpiresAt = ? WHERE discordID = ?',
+            [$type, $accessToken, $refreshToken, $expiresAt, $id]
         );
     }
 
     /**
-     * Get Calendar authentication type, as a 3-char string code.
+     * Gets Calauth type, as a 3-letter abbreviation.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
+     * @return string The calauth type as a 3-letter abbreviation.
      */
-    public static function get_calauth_type($id) {
-        return DB::scalar('SELECT calauth_type FROM discordusers WHERE discord_id = ?',
+    public static function getCalauthType(string $id) {
+        return DB::scalar('SELECT calauthType FROM discordUsers WHERE discordID = ?',
             [$id]
         );
     }
 
     /**
-     * Get Calendar authentication tokens, returning record[calauth_access_token, calauth_refresh_token, calauth_expires_at].
+     * Gets Calauth OAuth2 tokens.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
+     * @return mixed Record of {calauthAccessToken, calauthRefreshToken, calauthExpiresAt => Unix timestamp of when access token expires.}
      */
-    public static function get_calauth_tokens($id) {
-        return DB::select('SELECT calauth_access_token, calauth_refresh_token, calauth_expires_at FROM discordusers WHERE discord_id = ?',
+    public static function getCalauthTokens(string $id) {
+        return DB::select('SELECT calauthAccessToken, calauthRefreshToken, calauthExpiresAt FROM discordUsers WHERE discordID = ?',
             [$id]
         )[0];
     }
 
     /**
-     * Remove Calendar authentication tokens and settings.
+     * Removes Calendar authentication tokens and settings.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
      */
-    public static function remove_calauth_tokens_and_settings($id) {
-        return DB::update('UPDATE discordusers SET calauth_type = "", calauth_access_token = "", calauth_refresh_token = "", calauth_expires_at = 0, settings_calendar_selectedcalendars = "" WHERE discord_id = ?',
+    public static function removeCalauthTokensAndSettings(string $id) {
+        DB::update('UPDATE discordUsers SET calauthType = "", calauthAccessToken = "", calauthRefreshToken = "", calauthExpiresAt = 0, settingsCalendarSelectedCalendars = "" WHERE discordID = ?',
             [$id]
         );
     }
 
     /**
-     * Remove Calendar authentication tokens and settings for the current user.
+     * Removes Calauth tokens and settings for the current user.
+     * @param Request $request The HTTP request.
      */
-    public static function remove_current_user_calauth_tokens($request) {
-        DBController::remove_calauth_tokens_and_settings(DiscordAuthController::get_current_user_id($request));
+    public static function removeCurrentUserCalauthTokens($request) {
+        DBController::removeCalauthTokensAndSettings(DiscordAuthController::getCurrentUserID($request));
     }
 
     /**
-     * Return a boolean value, true if the user with this Discord ID is already in the database.
+     * Returns true if the user with this Discord ID has registered.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
+     * @return bool True if the user with this Discord ID exists in the database, false otherwise.
      */
-    public static function user_registered($id) {
-        return DB::scalar('SELECT count(1) FROM discordusers WHERE discord_id = ?', [$id]) == 1;
+    public static function userRegistered(string $id) {
+        return DB::scalar('SELECT count(1) FROM discordUsers WHERE discordID = ?', [$id]) == 1;
     }
 
     /**
-     * Create a new user with default settings in the database, and a provided Discord ID.
+     * Creates a new user with default settings in the database, and a provided User ID.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
+     * @param string $timezone User's timezone as name of region and city (e.g. Europe/London).
      */
-    public static function create_new_user($id, $timezone) {
-        DB::insert('INSERT INTO discordusers (discord_id, settings_activehours_start, settings_activehours_end, settings_preferences_timezone, settings_calendar_selectedcalendars) VALUES (?, 480, 1200, ?, "")',
+    public static function createNewUser(string $id, string $timezone) {
+        DB::insert('INSERT INTO discordUsers (discordID, settingsActiveHoursStart, settingsActiveHoursEnd, settingsPreferencesTimezone, settingsCalendarSelectedCalendars) VALUES (?, 480, 1200, ?, "")',
             [$id, $timezone]
             // Active hours 08:00 to 20:00
         );
     }
 
     /**
-     * Change settings of a user in the database
+     * Changes general settings of a user.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
+     * @param int $settingsActiveHoursStart as minutes since midnight.
+     * @param int $settingsActiveHoursEnd as minutes since midnight.
+     * @param string $settingsPreferencesTimezone User's timezone as name of region and city (e.g. Europe/London).
      */
-    public static function set_user_settings($id, $settings_activehours_start, $settings_activehours_end, $settings_preferences_timezone) {
-        DB::update('UPDATE discordusers SET settings_activehours_start = ?, settings_activehours_end = ?, settings_preferences_timezone = ? WHERE discord_id = ?',
-            [$settings_activehours_start, $settings_activehours_end, $settings_preferences_timezone, $id]
+    public static function saveUserSettings(string $id, int $settingsActiveHoursStart, int $settingsActiveHoursEnd, string $settingsPreferencesTimezone) {
+        DB::update('UPDATE discordUsers SET settingsActiveHoursStart = ?, settingsActiveHoursEnd = ?, settingsPreferencesTimezone = ? WHERE discordID = ?',
+            [$settingsActiveHoursStart, $settingsActiveHoursEnd, $settingsPreferencesTimezone, $id]
         );
     }
 
     /**
-     * Change settings of the currently logged-in user in the database
+     * Changes general settings of the currently logged-in user.
+     * @param Request $request HTTP request.
+     * @param int $settingsActiveHoursStart as minutes since midnight.
+     * @param int $settingsActiveHoursEnd as minutes since midnight.
+     * @param string $settingsPreferencesTimezone User's timezone as name of region and city (e.g. Europe/London).
      */
-    public static function set_current_user_settings($request, $settings_activehours_start, $settings_activehours_end, $settings_preferences_timezone) {
-        DBController::set_user_settings(DiscordAuthController::get_current_user_id($request), $settings_activehours_start, $settings_activehours_end, $settings_preferences_timezone);
+    public static function saveCurrentUserSettings($request, int $settingsActiveHoursStart, int $settingsActiveHoursEnd, string $settingsPreferencesTimezone) {
+        DBController::saveUserSettings(DiscordAuthController::getCurrentUserID($request), $settingsActiveHoursStart, $settingsActiveHoursEnd, $settingsPreferencesTimezone);
     }
 
     /**
-     * Get settings of a user in the database, or return null if the user is not registered.
+     * Gets general settings of a user in the database, or returns null if the user is not registered.
+     * @param string $id The user ID that they were registered with (e.g. Discord ID).
+     * @return mixed|null Record {settingsActiveHoursStart, settingsActiveHoursEnd, settingsPreferencesTimezone => as name of region and city (e.g. Europe/London).}, or null if the user is not registered.
      */
-    public static function get_user_settings($id) {
+    public static function getUserSettings(string $id) {
         try {
-            return DB::select('SELECT settings_activehours_start, settings_activehours_end, settings_preferences_timezone FROM discordusers WHERE discord_id = ?', [$id])[0]; // First record
+            return DB::select('SELECT settingsActiveHoursStart, settingsActiveHoursEnd, settingsPreferencesTimezone FROM discordUsers WHERE discordID = ?', [$id])[0]; // First record
         } catch (\Exception $e) {
             return null;
         }
     }
 
     /**
-     * Get settings of the currently logged-in user in the database
+     * Gets general settings of the currently logged-in user in the database.
+     * @param Request $request HTTP request.
+     * @return mixed|null Record {settingsActiveHoursStart, settingsActiveHoursEnd, settingsPreferencesTimezone => as name of region and city (e.g. Europe/London).}, or null if the user is not registered.
      */
-    public static function get_current_user_settings(Request $request) {
-        return DBController::get_user_settings(DiscordAuthController::get_current_user_id($request));
+    public static function getCurrentUserSettings(Request $request) {
+        return DBController::getUserSettings(DiscordAuthController::getCurrentUserID($request));
     }
+
     /* -----------------------------------------------
      * --------------Freecache------------------------
      * ---------------------------------------------*/
 
     /**
-     * Check whether cache with $date, $timezone and $discordusers (comma-separated) is present and has not expired, determined by $expires_after in seconds.
-     * Return ["new" => true, "id" => id of currently-empty cache] if cache is not present / present but expired, and ["new" => false, "id" => id of currently-full cache] if one is available and not expired.
+     * Gives information about a cache for server free slots. Each cache is specific to a date and timezone to speed up cached loading.
+     * @param string $date The date in the format yyyy-mm-dd to cache.
+     * @param string $timezone Timezone as name of region and city (e.g. Europe/London) to cache.
+     * @param string $discordUsers Comma-separated values: Each is the ID of a user that they were registered with (e.g. Discord ID).
+     * @param int $expiresAfter Longest possible lifetime of the old cache, in seconds.
+     * @return array ["new" => Whether the cache is new and therefore empty., "id" => ID of relevant cache.]
      */
-    public static function get_freecache_id_if_present($date, $timezone, $discordusers, $expires_after) {
+    public static function getFreeCacheIDIfPresent(string $date, string $timezone, string $discordUsers, int $expiresAfter) {
         try {
-            $current_time = time();
-            $cache_record = DB::select('SELECT id, created_at FROM freecache_caches WHERE daterepresented = ? AND timezone = ? AND discordusers = ?', [$date, $timezone, $discordusers])[0]; // First record
-            if($cache_record->created_at + $expires_after <= $current_time) { // Exists but Expired
-                DB::update('UPDATE freecache_caches SET created_at = ? WHERE daterepresented = ? AND timezone = ? AND discordusers = ?', [$current_time, $date, $timezone, $discordusers]); // Update created_at
-                DB::delete('DELETE FROM freecache_slots WHERE cache_id = ?', [$cache_record->id]); // Empty cache
-                return ["new" => true, "id" => $cache_record->id];
+            $currentTime = time();
+            $cacheRecord = DB::select('SELECT id, createdAt FROM freeCacheCaches WHERE dateRepresented = ? AND timezone = ? AND discordUsers = ?', [$date, $timezone, $discordUsers])[0]; // First record
+            if($cacheRecord->createdAt + $expiresAfter <= $currentTime) { // Exists but Expired
+                DB::update('UPDATE freeCacheCaches SET createdAt = ? WHERE dateRepresented = ? AND timezone = ? AND discordUsers = ?', [$currentTime, $date, $timezone, $discordUsers]); // Update createdAt
+                DB::delete('DELETE FROM freeCacheSlots WHERE cacheID = ?', [$cacheRecord->id]); // Empty cache
+                return ["new" => true, "id" => $cacheRecord->id];
             }
 
-            return ["new" => false, "id" => $cache_record->id];
+            return ["new" => false, "id" => $cacheRecord->id];
         } catch (\Exception $e) {
             // Doesn't exist
-            DB::insert('INSERT INTO freecache_caches (created_at, daterepresented, timezone, discordusers) VALUES (?, ?, ?, ?)', [$current_time, $date, $timezone, $discordusers]); // Create new cache
+            DB::insert('INSERT INTO freeCacheCaches (createdAt, dateRepresented, timezone, discordUsers) VALUES (?, ?, ?, ?)', [$currentTime, $date, $timezone, $discordUsers]); // Create new cache
             return ["new" => true, "id" => DB::scalar("SELECT LAST_INSERT_ID()")];
         }
     }
 
     /**
-     * Return ID of a new free-slot cache for $date, $timezone, and $discordusers, updating any already-existing caches
+     * Gives the ID of an empty cache for server free slots, deleting any old caches so this data is relevant. Each cache is specific to a date and timezone to speed up cached loading.
+     * @param string $date The date in the format yyyy-mm-dd to cache.
+     * @param string $timezone Timezone as name of region and city (e.g. Europe/London) to cache.
+     * @param string $discordUsers Comma-separated values: Each is the ID of a user that they were registered with (e.g. Discord ID).
+     * @return int Empty cache ID
      */
-    public static function get_freecache_id_always_new($date, $timezone, $discordusers) {
+    public static function getFreecacheIDAlwaysNew(string $date, string $timezone, string $discordUsers) {
         try {
-            $current_time = time();
+            $currentTime = time();
             // Get previous cache
-            $cache_record = DB::select('SELECT id, created_at FROM freecache_caches WHERE daterepresented = ? AND timezone = ? AND discordusers = ?', [$date, $timezone, $discordusers])[0]; // First record
-            DB::update('UPDATE freecache_caches SET created_at = ? WHERE daterepresented = ? AND timezone = ? AND discordusers = ?', [$current_time, $date, $timezone, $discordusers]); // Update created_at
-            DB::delete('DELETE FROM freecache_slots WHERE cache_id = ?', [$cache_record->id]); // Empty cache
-            return $cache_record->id;
+            $cacheRecord = DB::select('SELECT id, createdAt FROM freeCacheCaches WHERE dateRepresented = ? AND timezone = ? AND discordUsers = ?', [$date, $timezone, $discordUsers])[0]; // First record
+            DB::update('UPDATE freeCacheCaches SET createdAt = ? WHERE dateRepresented = ? AND timezone = ? AND discordUsers = ?', [$currentTime, $date, $timezone, $discordUsers]); // Update createdAt
+            DB::delete('DELETE FROM freeCacheSlots WHERE cacheID = ?', [$cacheRecord->id]); // Empty cache
+            return $cacheRecord->id;
         } catch (\Exception $e) {
             // Doesn't exist
-            DB::insert('INSERT INTO freecache_caches (created_at, daterepresented, timezone, discordusers) VALUES (?, ?, ?, ?)', [$current_time, $date, $timezone, $discordusers]); // Create new cache
+            DB::insert('INSERT INTO freeCacheCaches (createdAt, dateRepresented, timezone, discordUsers) VALUES (?, ?, ?, ?)', [$currentTime, $date, $timezone, $discordUsers]); // Create new cache
             return DB::scalar("SELECT LAST_INSERT_ID()");
         }
     }
 
     /**
-     * Add the free $slots (as array) to the free cache with ID $cache_id.
+     * Adds free slots to the cache with a certain ID for server free slots.
+     * @param int $cacheID The ID of the cache for server free slots, created with DBController::getFreeCacheIDIfPresent or DBController::getFreecacheIDAlwaysNew.
+     * @param array $slots The free slots in the format [(free slot)["start" => minutes since midnight time, "end" => minutes since midnight time], ...]
      */
-    public static function set_freecache_slots($cache_id, $slots) {
+    public static function setFreeCacheSlots(int $cacheID, array $slots) {
         foreach($slots as $slot) {
-            DB::insert('INSERT INTO freecache_slots (cache_id, starttime, endtime) VALUES (?, ?, ?)', [$cache_id, $slot["start"], $slot["end"]]); // Create new cache
+            DB::insert('INSERT INTO freeCacheSlots (cacheID, startTime, endTime) VALUES (?, ?, ?)', [$cacheID, $slot["start"], $slot["end"]]); // Create new cache
         }
     }
 
     /**
-     * Get the free cache with ID $cache_id and return an array of free slots.
+     * Gets the server free slots in a certain cache by ID.
+     * @param int $cacheID The ID of the cache for server free slots, created with DBController::getFreeCacheIDIfPresent or DBController::getFreecacheIDAlwaysNew.
+     * @return array The free slots in the format [(free slot)["start" => minutes since midnight time, "end" => minutes since midnight time], ...]
      */
-    public static function get_freecache_slots($cache_id) {
-        $db_result = DB::select('SELECT starttime, endtime FROM freecache_slots WHERE cache_id = ?', [$cache_id]);
+    public static function getFreeCacheSlots(int $cacheID) {
+        $db_result = DB::select('SELECT startTime, endTime FROM freeCacheSlots WHERE cacheID = ?', [$cacheID]);
         $slots = [];
         foreach($db_result as $slot) {
-            $slots[] = ["start" => $slot->starttime, "end" => $slot->endtime];
+            $slots[] = ["start" => $slot->startTime, "end" => $slot->endTime];
         }
         return $slots;
     }

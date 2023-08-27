@@ -12,92 +12,81 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 /**
- * Handle Discord server access via the Discord API.
+ * Handles Discord server access via the Discord API.
  */
 class DiscordServerController extends Controller
 {
     /**
-     * Display list of servers that the current user is in.
+     * @http
+     * Displays list of servers that the current user is in.
      */
-    public function server_list(Request $request) {
+    public function serverList(Request $request) {
         $servers = Http::withHeaders([
             'Authorization' => 'Bearer ' . $request->session()->get('discord.accesstoken'),
             'Content-Type' => 'application/json; charset=UTF-8',
-            'User-Agent' => config('app.USER_AGENT'),
+            'User-Agent' => config('app.userAgent'),
         ])->asForm()->get('https://discord.com/api/v10/users/@me/guilds');
-        return view('server_list', ['servers' => $servers->json()]);
+        return view('serverList', ['servers' => $servers->json()]);
     }
 
     /**
-     * Display comparison calendar of members of the server by {id}.
+     * @http
+     * Displays comparison calendar of members of a Discord server.
+     * @param string $id Discord server ID.
      */
-    public function server_calendar(Request $request, string $id) {
-        $timezone = DBController::get_current_user_settings($request)->settings_preferences_timezone;
+    public function serverCalendar(Request $request, string $id) {
+        $timezone = DBController::getCurrentUserSettings($request)->settingsPreferencesTimezone;
         // Get server info from only allowed route
         $servers = Http::withHeaders([
             'Authorization' => 'Bearer ' . $request->session()->get('discord.accesstoken'),
             'Content-Type' => 'application/json; charset=UTF-8',
-            'User-Agent' => config('app.USER_AGENT'),
+            'User-Agent' => config('app.userAgent'),
         ])->asForm()->get('https://discord.com/api/v10/users/@me/guilds');
         $server = null;
-        foreach($servers->json() as $possible_server) {
-            if($possible_server['id'] == $id) {
-                $server = $possible_server;
+        foreach($servers->json() as $possibleServer) {
+            if($possibleServer['id'] == $id) {
+                $server = $possibleServer;
             }
         }
         if($server == null) {
             // No access to server
-            return (new ErrorMessage(null, "no_access", "You don't have access to this server, or the server no longer exists."))->get_view($request, false);
+            return (new ErrorMessage(null, "noAccess", "You don't have access to this server, or the server no longer exists."))->getView($request, false);
         } else {
             // Has access to server
-            $members_discord = Http::withHeaders([ // Need bot in server
-                'Authorization' => 'Bot ' . config('services.discord.bot_token'),
+            $membersDiscord = Http::withHeaders([ // Need bot in server
+                'Authorization' => 'Bot ' . config('services.discord.botToken'),
                 'Content-Type' => 'application/json; charset=UTF-8',
-                'User-Agent' => config('app.USER_AGENT'),
+                'User-Agent' => config('app.userAgent'),
             ])->asForm()->get('https://discord.com/api/v10/guilds/' . $id . '/members?limit=1000');
 
-            $members_discord = $members_discord->json();
+            $membersDiscord = $membersDiscord->json();
 
-            if(array_key_exists('code', $members_discord) && $members_discord['code'] == 10004) { // Unknown Guild as no bot acces
-                return view('needs_bot', ['server' => $server]);
+            if(array_key_exists('code', $membersDiscord) && $membersDiscord['code'] == 10004) { // Unknown Guild as no bot acces
+                return view('needsBot', ['server' => $server]);
             }
 
-            $num_unregistered = 0;
-            $unregistered_usernames = [];
+            $numUnregistered = 0;
+            $unregisteredUsernames = [];
 
-            // $members_discord is discord info of all members
-            foreach($members_discord as &$member_discord) {
-                if(array_key_exists('bot', $member_discord['user']) && $member_discord['user']['bot']) {
+            // $membersDiscord is discord info of all members
+            foreach($membersDiscord as &$memberDiscord) {
+                if(array_key_exists('bot', $memberDiscord['user']) && $memberDiscord['user']['bot']) {
                     continue;
                 }
 
-                $settings = DBController::get_user_settings($member_discord['user']['id']);
+                $settings = DBController::getUserSettings($memberDiscord['user']['id']);
                 if($settings == null) { // No account
-                    $member_discord["unregistered"] = true;
-                    $num_unregistered++;
-                    $unregistered_usernames[] = isset($member_discord["user"]["global_name"]) ? $member_discord["user"]["global_name"] : $member_discord["user"]["username"];
+                    $memberDiscord["unregistered"] = true;
+                    $numUnregistered++;
+                    $unregisteredUsernames[] = isset($memberDiscord["user"]["global_name"]) ? $memberDiscord["user"]["global_name"] : $memberDiscord["user"]["username"];
                 }
             }
 
             // TODO: Multiple Pages; Agree to access on server first; channel-specific; choose users to show
-            return view('server_calendar', [
-                'server' => $server, 'members_discord' => $members_discord,
-                'timezone' => $timezone, 'num_unregistered' => $num_unregistered, 'unregistered_usernames' => $unregistered_usernames,
-                'free_slot_min_length' => 30]);
+            return view('serverCalendar', [
+                'server' => $server, 'membersDiscord' => $membersDiscord,
+                'timezone' => $timezone, 'numUnregistered' => $numUnregistered, 'unregisteredUsernames' => $unregisteredUsernames,
+                'freeSlotMinLength' => 30]);
         }
-    }
-
-    /**
-     * Display comparison calendar of members of the server by {id}, for day {date}, as an image.
-     */
-    public function server_calendar_img(Request $request, string $id, string $date) {
-        $validator = Validator::make(["date" => $date], [
-            'date' => 'required|date_format:Y-m-d'
-        ]);
-        if ($validator->fails()) {
-            return (new ErrorMessage(null, "parameters_wrong", $validator->errors()->first()))->get_json();
-        }
-
-
     }
 }

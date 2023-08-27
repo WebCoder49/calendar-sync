@@ -197,6 +197,5 @@ return [
     | Values that depend on the deployment
     |
     */
-    'BASE_URL' => getenv('BASE_URL'),
-    'USER_AGENT' => 'CalendarSyncBot (https://webcoder49.wordpress.com/contact-me/, 0.0.0)'
+    'userAgent' => 'CalSync (legal@webcoder49.dev, 0.0.0)'
 ];

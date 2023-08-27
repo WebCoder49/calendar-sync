@@ -15,14 +15,14 @@
             {{-- <p>All</p> TODO: Roles--}}
         {{--</div>
     </div> --}}
-    @if($num_unregistered != 0)
-        @if($num_unregistered == 1)
-            <p class="warning">{{ $unregistered_usernames[0] }} is unregistered on Calendar Sync.</p>
+    @if($numUnregistered != 0)
+        @if($numUnregistered == 1)
+            <p class="warning">{{ $unregisteredUsernames[0] }} is unregistered on Calendar Sync.</p>
         @else
             <div class="warning">
                 <details>
-                    <summary>{{ $num_unregistered }} users are unregistered on Calendar Sync. Click to view a list of their usernames.</summary>
-                    <pre>@foreach($unregistered_usernames as $username){{ $username }}
+                    <summary>{{ $numUnregistered }} users are unregistered on Calendar Sync. Click to view a list of their usernames.</summary>
+                    <pre>@foreach($unregisteredUsernames as $username){{ $username }}
 @endforeach
                     </pre>
                 </details>
@@ -40,15 +40,15 @@
     @endif --}}
 @endsection
 @section('calendar-top-labels')
-    @php ($num_members = 0)
-    @php ($userids_js = '')
-    @php ($userids_urlparams = '')
-    @foreach ($members_discord as $member)
+    @php ($numMembers = 0)
+    @php ($userIDsJS = '')
+    @php ($userIDsURLParams = '')
+    @foreach ($membersDiscord as $member)
         @unless (array_key_exists('bot', $member['user']) && $member['user']['bot'])
             @if(!array_key_exists("unregistered", $member) || $member["unregistered"] == false)
-                @php ($num_members++)
-                @php ($userids_js = $userids_js.'"'.strval($member['user']['id']).'",')
-                @php ($userids_urlparams = $userids_urlparams.'&user_ids[]='.urlencode(strval($member['user']['id'])))
+                @php ($numMembers++)
+                @php ($userIDsJS = $userIDsJS.'"'.strval($member['user']['id']).'",')
+                @php ($userIDsURLParams = $userIDsURLParams.'&userIDs[]='.urlencode(strval($member['user']['id'])))
                 <div class="profile small">
                     @if($member['nick'] != null) {{-- Nickname --}}
                         <p>{{ $member['nick'] }}</p>
@@ -70,15 +70,15 @@
     @endforeach
 @endsection
 @section('calendar-after')
-    <script>var calendar_userids = [{!! $userids_js !!}]; var calendar_timezone = "{{ $timezone }}"; function calendar_get_daypreviewbg(date) { return "/api/calendars/img?date="+date+"&timezone={!! urlencode($timezone) . $userids_urlparams !!}" }</script>
+    <script>var calendar_userIDs = [{!! $userIDsJS !!}]; var calendar_timezone = "{{ $timezone }}"; function calendar_getDayPreviewBG(date) { return "/api/calendars/img?date="+date+"&timezone={!! urlencode($timezone) . $userIDsURLParams !!}" }</script>
     <style>.day-preview { background-image: attr("data-bgimg"); }</style>
     <script src="{{asset('js/server_calendar.js')}}"></script>
 @endsection
 @section('calendar-cssvars')
-    --num-columns: {{ $num_members }};
+    --num-columns: {{ $numMembers }};
 @endsection
 @section('calendar-events')
-    {{-- @for($i = 0; $i < $num_members; $i++)
+    {{-- @for($i = 0; $i < $numMembers; $i++)
         @if(empty($members_calendar[$i]))
             <div class="event unregistered" style="--col: {{ $i }}; --starttime: 0; --endtime: 1440;">Unregistered</div>
         @else

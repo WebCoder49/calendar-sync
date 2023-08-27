@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('freecache_caches', function (Blueprint $table) {
+        Schema::create('freeCacheCaches', function (Blueprint $table) {
             $table->id();
-            $table->date('daterepresented'); // Date that this cache represents (yyyy-mm-dd)
+            $table->date('dateRepresented'); // Date that this cache represents (yyyy-mm-dd)
             $table->text('timezone'); // Timezone that this cache represents (e.g. Europe/London)
-            $table->text('discordusers'); // Comma-separated list of Discord users whose mutual free time this cache represents
-            $table->unsignedInteger('created_at')->default(0); // Unix timestamp of when this cache was created
+            $table->text('discordUsers'); // Comma-separated list of Discord users whose mutual free time this cache represents
+            $table->unsignedInteger('createdAt')->default(0); // Unix timestamp of when this cache was created
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('freecache_caches');
+        Schema::dropIfExists('freeCacheCaches');
     }
 };

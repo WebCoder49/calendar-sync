@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\DBController;
-use App\Http\Controllers\CalAuthController;
+use App\Http\Controllers\CalauthController;
 use App\Exceptions\ErrorMessage;
 
 use Illuminate\Support\Facades\Http;
@@ -16,378 +16,415 @@ use \DateTimeZone;
 use Intervention\Image\Facades\Image;
 
 /**
- * Handle Calendar event getting and organising.
+ * Handles Calendar event operations - getting them, comparing them and finding mutual free slots.
  */
 class CalendarController extends Controller
 {
     /**
-     * Set the default calendar-related settings that need a calendar connected to work.
+     * Sets the default calendar-related settings that need a calendar connected to work.
+     * @param string $userID The ID of the user that they were registered with (e.g. Discord ID).
+     * @param string $calauthType 3-letter abbreviation.
+     * @param string $accessToken Calauth OAuth2 access token.
+     * @return null|ErrorMessage
      */
-    public static function set_default_settings($user_id, $calendar_type, $access_token) {
+    public static function setDefaultSettings(string $userID, string $calauthType, string $accessToken) {
         // Default selectedcalendars is primary calendar only (in " "-separated list)
-        if($calendar_type == "ggl") {
-            $primary_calendar = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $access_token,
+        if($calauthType == "ggl") {
+            $primaryCalendar = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
                 'Content-Type' => 'application/json; charset=UTF-8',
-                'User-Agent' => config('app.USER_AGENT'),
+                'User-Agent' => config('app.userAgent'),
             ])->asForm()->get('https://www.googleapis.com/calendar/v3/users/me/calendarList/primary');
-            if($primary_calendar->successful()) {
-                DBController::save_calendar_settings($user_id, $primary_calendar["id"]);
+            if($primaryCalendar->successful()) {
+                DBController::saveCalendarSettings($userID, $primaryCalendar["id"]);
             } else {
-                return new ErrorMessage("ggl", $primary_calendar["error"]["code"], $primary_calendar["error"]["message"]);
+                return new ErrorMessage("ggl", $primaryCalendar["error"]["code"], $primaryCalendar["error"]["message"]);
             }
         } else {
-            return new ErrorMessage(null, "unknown_calendar_type", "Don't recognise calendar '".$calendar_type."'.");
+            return new ErrorMessage(null, "unknownCalendarType", "Don't recognise calendar '".$calauthType."'.");
         }
     }
 
     /**
-     * Get the names of calendars available, as an array of ["id" => string-based ID, "name" => display name].
+     * Gets the names of a user's calauth calendars available, as an array of ["id" => string-based ID, "name" => display name].
+     * @param string $userID The ID of the user that they were registered with (e.g. Discord ID).
+     * @return array|ErrorMessage user's calauth calendars available, as an array of ["id" => string-based ID, "name" => display name].
      */
-    public static function get_calendars_available($user_id) {
-        $type_and_access_token = CalAuthController::get_type_and_access_token($user_id);
-        if($type_and_access_token instanceof ErrorMessage) {
-            $type_and_access_token->add_description_context("Could not get access token: ");
-            return $type_and_access_token;
+    public static function getCalendarsAvailable($userID) {
+        $typeAndAccessToken = CalauthController::getTypeAndAccessToken($userID);
+        if($typeAndAccessToken instanceof ErrorMessage) {
+            $typeAndAccessToken->addDescriptionContext("Could not get access token: ");
+            return $typeAndAccessToken;
         }
-        if($type_and_access_token["type"] == "ggl") {
+        if($typeAndAccessToken["type"] == "ggl") {
             $calendars = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $type_and_access_token["access_token"],
+                'Authorization' => 'Bearer ' . $typeAndAccessToken["accessToken"],
                 'Content-Type' => 'application/json; charset=UTF-8',
-                'User-Agent' => config('app.USER_AGENT'),
+                'User-Agent' => config('app.userAgent'),
             ])->asForm()->get('https://www.googleapis.com/calendar/v3/users/me/calendarList');
             if($calendars->successful()) {
                 // Returned in order declared
-                $result_primary = null;
-                $result_owner = [];
-                $result_other = [];
+                $resultPrimary = null;
+                $resultOwner = [];
+                $resultOther = [];
                 foreach($calendars["items"] as $calendar) {
                     if(isset($calendar["primary"]) && $calendar["primary"]) {
-                        $result_primary = ["id" => $calendar["id"], "name" => "Primary Calendar (" . (isset($calendar["summary"]) ? $calendar["summary"] : $calendar["id"]) . ")"];
+                        $resultPrimary = ["id" => $calendar["id"], "name" => "Primary Calendar (" . (isset($calendar["summary"]) ? $calendar["summary"] : $calendar["id"]) . ")"];
                     } else {
                         if($calendar["accessRole"] == "owner") {
-                            $result_owner[] = ["id" => $calendar["id"], "name" => isset($calendar["summary"]) ? $calendar["summary"] : $calendar["id"]];
+                            $resultOwner[] = ["id" => $calendar["id"], "name" => isset($calendar["summary"]) ? $calendar["summary"] : $calendar["id"]];
                         } else {
-                            $result_other[] = ["id" => $calendar["id"], "name" => isset($calendar["summary"]) ? $calendar["summary"] : $calendar["id"]];
+                            $resultOther[] = ["id" => $calendar["id"], "name" => isset($calendar["summary"]) ? $calendar["summary"] : $calendar["id"]];
                         }
                     }
                 }
-                if(isset($result_primary)) {
-                    return array_merge([$result_primary], $result_owner, $result_other);
+                if(isset($resultPrimary)) {
+                    return array_merge([$resultPrimary], $resultOwner, $resultOther);
                 } else {
-                    return array_merge($result_owner, $result_other);
+                    return array_merge($resultOwner, $resultOther);
                 }
             } else {
                 return new ErrorMessage("ggl", $calendars["error"]["code"], $calendars["error"]["message"]);
             }
         }
-        return new ErrorMessage(null, "unknown_calendar_type", "Cannot get available calendars as don't recognise calendar '".$calendar_type."'.");
+        return new ErrorMessage(null, "unknownCalendarType", "Cannot get available calendars as don't recognise calendar '".$typeAndAccessToken["type"]."'.");
     }
 
     /**
-     * Convert a string time (e.g. "07:15") to a number time (e.g. 435, number of minutes since midnight)
+     * Converts a string time (e.g. "07:15") to a number time (e.g. 435, number of minutes since midnight)
+     * @param string $strTime (e.g. "07:15")
+     * @return int (e.g. 435, number of minutes since midnight)
      */
-    public static function time_str2num($str_time) {
+    public static function timeStr2Num(string $strTime) {
         try {
-            [$hours, $mins] = explode(":", $str_time);
+            [$hours, $mins] = explode(":", $strTime);
             return ($hours * 60) + $mins;
         } catch (\Exception $e) {
-            return '00:00';
+            return 0;
         }
     }
     /**
-     * Convert a number time (e.g. 435, number of minutes since midnight) to a string time (e.g. "07:15")
+     * Converts a number time (e.g. 435, number of minutes since midnight) to a string time (e.g. "07:15")
+     * @param int $numTime (e.g. 435, number of minutes since midnight)
+     * @return string (e.g. "07:15")
      */
-    public static function time_num2str($num_time) {
-        $hours = floor($num_time / 60);
-        $mins = $num_time % 60;
+    public static function timeNum2Str(int $numTime) {
+        $hours = floor($numTime / 60);
+        $mins = $numTime % 60;
         return substr("00".(int)$hours, -2, 2).':'.substr("00".(int)$mins, -2, 2);
     }
 
     /**
-     * Get general, non-user-specific time info for the specified range of days (yyyy-mm-dd) with the specified timezone.
+     * Gets general, non-user-specific time info for the specified range of days with the specified timezone.
+     * @param string $startDay first day of range, inclusive (yyyy-mm-dd)
+     * @param string $endDay last day of range, inclusive (yyyy-mm-dd)
+     * @param string $timezoneStr Timezone as name of region and city (e.g. Europe/London)
+     * @return array general, non-user-specific time info (see code)
      */
-    public static function get_time_info(string $start_day, string $end_day, string $timezone_str) {
+    public static function getTimeInfo(string $startDay, string $endDay, string $timezoneStr) {
         // All text timestamps follow this format: https://datatracker.ietf.org/doc/html/rfc3339#section-5.8
-        $timezone = new DateTimeZone($timezone_str);
+        $timezone = new DateTimeZone($timezoneStr);
         // UNIX timestamps of midnight
-        $start_day_datetime = new DateTime($start_day."T00:00:00", $timezone);
-        $start_day_midnight = $start_day_datetime->getTimestamp(); // UNIX timestamp of midnight
-        $start_day_formattedstr = $start_day_datetime->format(DateTime::ATOM);
-        $end_day_datetime = new DateTime($end_day."23:59:59", $timezone);
-        $end_day_lastsecond = $end_day_datetime->getTimestamp(); // UNIX timestamp of 23:59:59
-        $end_day_formattedstr = $end_day_datetime->format(DateTime::ATOM);
+        $startDayDatetime = new DateTime($startDay."T00:00:00", $timezone);
+        $startDayMidnight = $startDayDatetime->getTimestamp(); // UNIX timestamp of midnight
+        $startDayFormattedStr = $startDayDatetime->format(DateTime::ATOM);
+        $endDayDatetime = new DateTime($endDay."23:59:59", $timezone);
+        $EndDayLastSecond = $endDayDatetime->getTimestamp(); // UNIX timestamp of 23:59:59
+        $endDayFormattedStr = $endDayDatetime->format(DateTime::ATOM);
 
-        $loggedinuser_timezone_offset = intdiv($start_day_datetime->getOffset(), 60); // seconds>minutes
+        $loggedInUserTimezoneOffset = intdiv($startDayDatetime->getOffset(), 60); // seconds>minutes
 
         return [
-            "timezone_str" => $timezone_str, // String timezone of logged-in user
+            "timezoneStr" => $timezoneStr, // String timezone of logged-in user
             "timezone" => $timezone, // DateTimeZone timezone of logged-in user
-            "start_day_datetime" => $start_day_datetime, // DateTime object of midnight on first day
+            "startDayDatetime" => $startDayDatetime, // DateTime object of midnight on first day
 
-            "start_day_midnight" => $start_day_midnight, // Unix timestamp of midnight on first day
-            "start_day_formattedstr" => $start_day_formattedstr, // String timestamp of midnight on first day
-            "end_day_lastsecond" => $end_day_lastsecond, // Unix timestamp of 23:59:59 on last day
-            "end_day_formattedstr" => $end_day_formattedstr, // String timestamp of 23:59:59 on last day
+            "startDayMidnight" => $startDayMidnight, // Unix timestamp of midnight on first day
+            "startDayFormattedStr" => $startDayFormattedStr, // String timestamp of midnight on first day
+            "EndDayLastSecond" => $EndDayLastSecond, // Unix timestamp of 23:59:59 on last day
+            "endDayFormattedStr" => $endDayFormattedStr, // String timestamp of 23:59:59 on last day
 
-            "loggedinuser_timezone_offset" => $loggedinuser_timezone_offset, // Offset of timezone (from UTC) of logged-in user
+            "loggedInUserTimezoneOffset" => $loggedInUserTimezoneOffset, // Offset of timezone (from UTC) of logged-in user
         ];
     }
 
     /**
-     * Get all slots when the user's calendar notes it is busy, from $start_day (inclusive) to $end_day (inclusive),
-     * as well as out-of-active-hours busy slots. Days are formatted yyyy-mm-dd.
-     * Return in format [(day: )[(busy slot: )["start" => integer minute time, "end" => integer minute time], another busy slot, ...], another day, ...]
+     * Gets slots when the user is busy, from $startDay (inclusive) to $endDay (inclusive).
+     * @param string $userID The ID of the user that they were registered with (e.g. Discord ID).
+     * @param $userSettings Database discordUsers table record of user
+     * @param array $timeInfo result of CalendarController::getTimeInfo
+     * @return array|ErrorMessage slots when the user is busy as [(day: )[(busy slot: )["start" => integer minute time, "end" => integer minute time], another busy slot, ...], another day, ...]
      */
-    public static function get_busy_slots_by_day($user_id, $user_settings, $time_info) {
+    public static function getBusySlotsByDay(string $userID, $userSettings, array $timeInfo) {
         // Get time info specific to this user
-        $thisuser_timezone_offset = intdiv((new DateTimeZone($user_settings->settings_preferences_timezone))->getOffset($time_info["start_day_datetime"]), 60); // seconds>minutes
-        $timezone_offset = $thisuser_timezone_offset - $time_info["loggedinuser_timezone_offset"];
+        $thisUserTimezoneOffset = intdiv((new DateTimeZone($userSettings->settingsPreferencesTimezone))->getOffset($timeInfo["startDayDatetime"]), 60); // seconds>minutes
+        $timezoneOffset = $thisUserTimezoneOffset - $timeInfo["loggedInUserTimezoneOffset"];
 
         // Make positive and in scope of day
-        $activehours_start = ($user_settings->settings_activehours_start - $timezone_offset + 1440) % 1440;
-        $activehours_end = ($user_settings->settings_activehours_end - $timezone_offset + 1440) % 1440;
-        // return ["start" => $activehours_start, "end" => $activehours_end]; // TODO Remove
+        $activehoursStart = ($userSettings->settingsActiveHoursStart - $timezoneOffset + 1440) % 1440;
+        $activehoursEnd = ($userSettings->settingsActiveHoursEnd - $timezoneOffset + 1440) % 1440;
 
         // Create busy slots array with active hours
-        if($activehours_start < $activehours_end) {
-            $active_hours_busy_slots = [["start" => 0, "end" => $activehours_start, "type" => "active_hours"], ["start" => $activehours_end, "end" => 1440, "type" => "active_hours"]];
+        if($activehoursStart < $activehoursEnd) {
+            $activeHoursBusySlots = [["start" => 0, "end" => $activehoursStart, "type" => "active_hours"], ["start" => $activehoursEnd, "end" => 1440, "type" => "active_hours"]];
         } else {
-            $active_hours_busy_slots = [["start" => $activehours_end, "end" => $activehours_start, "type" => "active_hours"]];
+            $activeHoursBusySlots = [["start" => $activehoursEnd, "end" => $activehoursStart, "type" => "active_hours"]];
         }
-        $busy_slots_by_day = [];
-        for($day = $time_info["start_day_midnight"]; $day < $time_info["end_day_lastsecond"]; $day += 86400) {
-            $busy_slots_by_day[] = $active_hours_busy_slots;
-        }
-
-        $busy_slots_from_api = CalendarController::get_busy_slots_from_api($user_id, $time_info["start_day_formattedstr"], $time_info["end_day_formattedstr"], $time_info["timezone_str"]);
-
-        if($busy_slots_from_api instanceof ErrorMessage) {
-            return $busy_slots_from_api;
-        } else if($busy_slots_from_api == null) {
-            return $busy_slots_by_day; // Active hours only
+        $busySlotsByDay = [];
+        for($day = $timeInfo["startDayMidnight"]; $day < $timeInfo["EndDayLastSecond"]; $day += 86400) {
+            $busySlotsByDay[] = $activeHoursBusySlots;
         }
 
-        foreach($busy_slots_from_api as $busy_slot) {
-            $start_day_and_time = CalendarController::timestamp_to_day_and_time($busy_slot["start"], $time_info["start_day_midnight"], $time_info["timezone"]);
-            $end_day_and_time = CalendarController::timestamp_to_day_and_time($busy_slot["end"], $time_info["start_day_midnight"], $time_info["timezone"]);
+        $busySlotsFromAPI = CalendarController::getBusySlotsFromAPI($userID, $timeInfo["startDayFormattedStr"], $timeInfo["endDayFormattedStr"], $timeInfo["timezoneStr"]);
+
+        if($busySlotsFromAPI instanceof ErrorMessage) {
+            return $busySlotsFromAPI;
+        } else if($busySlotsFromAPI == null) {
+            return $busySlotsByDay; // Active hours only
+        }
+
+        foreach($busySlotsFromAPI as $busySlot) {
+            $startDayAndTime = CalendarController::timestampToDayAndTime($busySlot["start"], $timeInfo["startDayMidnight"], $timeInfo["timezone"]);
+            $endDayAndTime = CalendarController::timestampToDayAndTime($busySlot["end"], $timeInfo["startDayMidnight"], $timeInfo["timezone"]);
 
             // Inside active hours
-            if($activehours_start < $activehours_end) {
-                if($start_day_and_time["time"] < $activehours_start) $start_day_and_time["time"] = $activehours_start;
-                if($end_day_and_time["time"] < $activehours_start) continue;
-                if($end_day_and_time["time"] > $activehours_end) $end_day_and_time["time"] = $activehours_end;
-                if($start_day_and_time["time"] > $activehours_end) continue;
+            if($activehoursStart < $activehoursEnd) {
+                if($startDayAndTime["time"] < $activehoursStart) $startDayAndTime["time"] = $activehoursStart;
+                if($endDayAndTime["time"] < $activehoursStart) continue;
+                if($endDayAndTime["time"] > $activehoursEnd) $endDayAndTime["time"] = $activehoursEnd;
+                if($startDayAndTime["time"] > $activehoursEnd) continue;
             } else {
-                if($start_day_and_time["time"] < $activehours_start && $start_day_and_time["time"] > $activehours_end) $start_day_and_time["time"] = $activehours_start;
-                if($end_day_and_time["time"] > $activehours_end && $end_day_and_time["time"] < $activehours_start) $end_day_and_time["time"] = $activehours_end;
-                if($end_day_and_time["time"] < $activehours_start && $start_day_and_time["time"] > $activehours_end) continue;
+                if($startDayAndTime["time"] < $activehoursStart && $startDayAndTime["time"] > $activehoursEnd) $startDayAndTime["time"] = $activehoursStart;
+                if($endDayAndTime["time"] > $activehoursEnd && $endDayAndTime["time"] < $activehoursStart) $endDayAndTime["time"] = $activehoursEnd;
+                if($endDayAndTime["time"] < $activehoursStart && $startDayAndTime["time"] > $activehoursEnd) continue;
             }
 
-            if($start_day_and_time["day"] == $end_day_and_time["day"]) {
+            if($startDayAndTime["day"] == $endDayAndTime["day"]) {
                 // Spans one day
-                $busy_slots_by_day[$start_day_and_time["day"]][] = ["start" => $start_day_and_time["time"], "end" => $end_day_and_time["time"], "type" => "busy"];
+                $busySlotsByDay[$startDayAndTime["day"]][] = ["start" => $startDayAndTime["time"], "end" => $endDayAndTime["time"], "type" => "busy"];
             } else {
                 // Spans multiple days
-                if($activehours_start < $activehours_end) {
-                    $busy_slots_by_day[$start_day_and_time["day"]][] = ["start" => $start_day_and_time["time"], "end" => $activehours_end, "type" => "busy"];
+                if($activehoursStart < $activehoursEnd) {
+                    $busySlotsByDay[$startDayAndTime["day"]][] = ["start" => $startDayAndTime["time"], "end" => $activehoursEnd, "type" => "busy"];
                 } else {
-                    $busy_slots_by_day[$start_day_and_time["day"]][] = ["start" => $start_day_and_time["time"], "end" => 1440, "type" => "busy"]; // Ends at midnight
+                    $busySlotsByDay[$startDayAndTime["day"]][] = ["start" => $startDayAndTime["time"], "end" => 1440, "type" => "busy"]; // Ends at midnight
                 }
-                for($day = $start_day_and_time["day"]+1; $day <= $end_day_and_time["day"]-1; $day++) {
+                for($day = $startDayAndTime["day"]+1; $day <= $endDayAndTime["day"]-1; $day++) {
                     // All Day
-                    $busy_slots_by_day[$end_day_and_time["day"]] = ["start" => 0, "end" => 1440];
+                    $busySlotsByDay[$endDayAndTime["day"]] = ["start" => 0, "end" => 1440];
                 }
-                if($activehours_start < $activehours_end) {
-                    $busy_slots_by_day[$end_day_and_time["day"]][] = ["start" => $activehours_start, "end" => $end_day_and_time["time"], "type" => "busy"];
+                if($activehoursStart < $activehoursEnd) {
+                    $busySlotsByDay[$endDayAndTime["day"]][] = ["start" => $activehoursStart, "end" => $endDayAndTime["time"], "type" => "busy"];
                 } else {
-                    $busy_slots_by_day[$start_day_and_time["day"]][] = ["start" => 0, "end" => $end_day_and_time["time"], "type" => "busy"]; // Starts at midnight
+                    $busySlotsByDay[$startDayAndTime["day"]][] = ["start" => 0, "end" => $endDayAndTime["time"], "type" => "busy"]; // Starts at midnight
                 }
             }
         }
 
-        return $busy_slots_by_day;
+        return $busySlotsByDay;
     }
 
     /**
-     * Turn a string $timestamp into ["day" => (zero-indexed day number, starting at UNIX timestamp $start_day_midnight), "time" => (minutes-since-midnight)]
+     * Turns a string $timestamp from a known range of days into ["day" => (zero-indexed day number in the range of days), "time" => (minutes since midnight)]
+     * @param string $timestamp string-formatted timestamp.
+     * @param int $startDayMidnight UNIX timestamp of midnight of first day in range.
+     * @param DateTimeZone $timezone The timezone which the result is relative to.
+     * @return array ["day" => (zero-indexed day number in the range of days), "time" => (minutes since midnight)]
      */
-    public static function timestamp_to_day_and_time(string $timestamp, int $start_day_midnight, DateTimeZone $timezone) {
+    public static function timestampToDayAndTime(string $timestamp, int $startDayMidnight, DateTimeZone $timezone) {
         $timestamp = (new DateTime($timestamp, $timezone))->getTimestamp(); // As UNIX timestamp
-        $day = intdiv($timestamp - $start_day_midnight, 86400);
-        $time = intdiv($timestamp - ($start_day_midnight + ($day * 86400)), 60); // Minutes since midnight (not seconds so /60)
+        $day = intdiv($timestamp - $startDayMidnight, 86400);
+        $time = intdiv($timestamp - ($startDayMidnight + ($day * 86400)), 60); // Minutes since midnight (not seconds so /60)
         return ["day" => $day, "time" => $time];
     }
 
     /**
-     * Return busy slots from API in format [["start" => (string timestamp), "end" => (string timestamp)]
+     * Returns busy slots from calauth API in format [["start" => (string timestamp), "end" => (string timestamp)]
+     * @param string $userID The ID of the user (calauth owner) that they were registered with (e.g. Discord ID).
+     * @param string $startTimestamp string-formatted timestamp.
+     * @param string $endTimestamp string-formatted timestamp.
+     * @param string $timezone Timezone as name of region and city (e.g. Europe/London).
      */
-    public static function get_busy_slots_from_api($user_id, string $start_timestamp, string $end_timestamp, string $timezone) {
-        $type_and_access_token = CalAuthController::get_type_and_access_token($user_id);
-        if(DBController::get_calauth_type($user_id) == "") return null; // No calendar connected
+    public static function getBusySlotsFromAPI(string $userID, string $startTimestamp, string $endTimestamp, string $timezone) {
+        $typeAndAccessToken = CalauthController::getTypeAndAccessToken($userID);
+        if(DBController::getCalauthType($userID) == "") return null; // No calendar connected
 
-        if($type_and_access_token instanceof ErrorMessage) {
-            $type_and_access_token->add_description_context("Could not get access token: ");
-            return $type_and_access_token;
+        if($typeAndAccessToken instanceof ErrorMessage) {
+            $typeAndAccessToken->addDescriptionContext("Could not get access token: ");
+            return $typeAndAccessToken;
         }
-        if($type_and_access_token["type"] == "ggl") {
-            $freebusy_response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $type_and_access_token["access_token"],
+        if($typeAndAccessToken["type"] == "ggl") {
+            $freeBusyResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $typeAndAccessToken["accessToken"],
                 'Content-Type' => 'application/json; charset=UTF-8',
-                'User-Agent' => config('app.USER_AGENT'),
+                'User-Agent' => config('app.userAgent'),
             ])->post('https://www.googleapis.com/calendar/v3/freeBusy', [
-                "timeMin" => $start_timestamp,
-                "timeMax" => $end_timestamp,
+                "timeMin" => $startTimestamp,
+                "timeMax" => $endTimestamp,
                 "timeZone" => $timezone,
-                "items" => CalendarController::generate_ggl_selectedcalendars(DBController::get_calendar_settings($user_id)->settings_calendar_selectedcalendars),
+                "items" => CalendarController::generateGglSelectedCalendars(DBController::getCalendarSettings($userID)->settingsCalendarSelectedCalendars),
             ]);
 
-            if($freebusy_response->successful()) {
+            if($freeBusyResponse->successful()) {
                 $result = [];
-                foreach($freebusy_response["calendars"] as $calendar) {
-                    foreach($calendar["busy"] as $busy_slot) {
-                        $result[] = ["start" => $busy_slot["start"], "end" => $busy_slot["end"]];
+                foreach($freeBusyResponse["calendars"] as $calendar) {
+                    foreach($calendar["busy"] as $busySlot) {
+                        $result[] = ["start" => $busySlot["start"], "end" => $busySlot["end"]];
                     }
                 }
                 return $result;
             } else {
-                return new ErrorMessage("ggl", $freebusy_response["error"]["code"], $freebusy_response["error"]["message"]);
+                return new ErrorMessage("ggl", $freeBusyResponse["error"]["code"], $freeBusyResponse["error"]["message"]);
             }
         }
     }
 
-    public static function generate_ggl_selectedcalendars(string $selectedcalendars) {
-        $selectedcalendars = explode(" ", $selectedcalendars);
+    /**
+     * Generates array of ["id" => ID of selected calendar] for entry into the Google Calendar API.
+     * @param string $selectedCalendars space-separate calendar IDs from database.
+     * @return array array of ["id" => ID of selected calendar] for entry into the Google Calendar API.
+     */
+    public static function generateGglSelectedCalendars(string $selectedCalendars) {
+        $selectedCalendars = explode(" ", $selectedCalendars);
         $result = [];
-        foreach($selectedcalendars as $calendar_id) {
-            $result[] = ["id" => $calendar_id];
+        foreach($selectedCalendars as $calendarID) {
+            $result[] = ["id" => $calendarID];
         }
         return $result;
     }
 
     /**
      * Comparison function (https://www.php.net/manual/en/function.usort.php) that is used to sort events in a day by their start time.
+     * @param array $a One event ["start" => time, ...].
+     * @param array $b Another event ["start" => time, ...].
+     * @return int Comparison result for start times of events.
      */
-    public static function compare_events($a, $b) {
+    public static function compareEvents(array $a, array $b) {
         return $a["start"] <=> $b["start"];
     }
 
     /**
-     * Turn an array of busy slots into free slots.
-     * $busy_slots_by_user is a 2D array - row=user; column=slot: ["start" => (start time), "end" => (end time)].
-
+     * Turns busy slots for many users in one day into mutual free slots.
+     * @param array $busySlotsByUser [(one user's busy slots)[(one busy slot)["start" => (start time, mins-since-midnight), "end" => (end time, mins-since-midnight)], ...], ...]
+     * @return array [(one mutual free slot)["start" => (start time, mins-since-midnight), "end" => (end time, mins-since-midnight)], ...]
      */
-    public static function get_free_slots($busy_slots_by_user) {
-        $busy_slots = array_merge(...$busy_slots_by_user);
-        usort($busy_slots, [CalendarController::class, "compare_events"]);
+    public static function getFreeSlots(array $busySlotsByUser) {
+        $busySlots = array_merge(...$busySlotsByUser);
+        usort($busySlots, [CalendarController::class, "compareEvents"]);
 
-        $free_slots = [];
+        $freeSlots = [];
         $latest_endofbusy = 0; // Latest time (mins-after-midnight) where busy slot ends, so far
-        foreach($busy_slots as $slot) {
+        foreach($busySlots as $slot) {
             if($slot["start"] > $latest_endofbusy) {
                 // Add this free slot found to the result
-                $free_slots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
+                $freeSlots[] = ["start" => $latest_endofbusy, "end" => $slot["start"]];
                 $latest_endofbusy = $slot["end"];
             } else if($slot["end"] > $latest_endofbusy) {
                 $latest_endofbusy = $slot["end"];
             }
         }
         if(1440 > $latest_endofbusy) {
-            $free_slots[] = ["start" => $latest_endofbusy, "end" => 1440];
+            $freeSlots[] = ["start" => $latest_endofbusy, "end" => 1440];
             // Until midnight if necessary
         }
-        return $free_slots;
+        return $freeSlots;
     }
 
     /**
-     * Get all mutual free slots for users in array $user_ids
-     * Return in format [(free slot: )["start" => mins-since-midnight time, "end" => mins-since-midnight time], another free slot, ...]
+     * Gets all mutual free slots for named users, without publicising busy slots.
+     * @param array $userIDs Each is the ID of a user that they were registered with (e.g. Discord ID)
+     * @param string $date The date in the format yyyy-mm-dd.
+     * @param string $timezone Timezone as name of region and city (e.g. Europe/London).
+     * @return array|ErrorMessage [(free slot)["start" => (mins-since-midnight time), "end" => (mins-since-midnight time)], ...]
      */
-    public static function get_free_slots_only_by_day($user_ids, $date, $timezone) {
+    public static function getFreeSlotsOnlyByDay(array $userIDs, string $date, string $timezone) {
         // TODO!!!!! Always Cache from direct load calendar
-        $cache = DBController::get_freecache_id_if_present($date, $timezone, implode(",", $user_ids), 600); // 10min
+        $cache = DBController::getFreeCacheIDIfPresent($date, $timezone, implode(",", $userIDs), 600); // 10min
         if($cache["new"]) {
             // Create cache and return free slots
-            $time_info = CalendarController::get_time_info($date, $date, $timezone); // For building calendar in correct timezone
+            $timeInfo = CalendarController::getTimeInfo($date, $date, $timezone); // For building calendar in correct timezone
 
             $events = [];
-            foreach($user_ids as $user_id) {
-                $busy_slots = CalendarController::get_busy_slots_by_day($user_id, DBController::get_user_settings($user_id), $time_info);
-                if($busy_slots instanceof ErrorMessage) {
-                    $busy_slots->add_description_context("Could not get busy slots: ");
-                    return $busy_slots;
+            foreach($userIDs as $userID) {
+                $busySlots = CalendarController::getBusySlotsByDay($userID, DBController::getUserSettings($userID), $timeInfo);
+                if($busySlots instanceof ErrorMessage) {
+                    $busySlots->addDescriptionContext("Could not get busy slots: ");
+                    return $busySlots;
                 }
-                $events[] = $busy_slots[0];
+                $events[] = $busySlots[0];
             }
-            $free_slots = CalendarController::get_free_slots($events);
+            $freeSlots = CalendarController::getFreeSlots($events);
 
-            DBController::set_freecache_slots($cache["id"], $free_slots);
+            DBController::setFreeCacheSlots($cache["id"], $freeSlots);
 
-            return $free_slots;
+            return $freeSlots;
         } else {
             // Return free slots from cache
-            return DBController::get_freecache_slots($cache["id"]);
+            return DBController::getFreeCacheSlots($cache["id"]);
         }
     }
 
     /**
-     * Get calendars for array of users (`user_ids` array parameter) on a specific day (`date` parameter, `timezone` parameter) returned as array of ["date" => (date given in), "free" => (free slots), "events" => [(events for 1 user), (another user...)]]].
-     * TODO: Pass min length of free slot
+     * Gets calendars for specified users on a specific day.
+     * @param $request HTTP request.
+     * @return array ["date" => (date given in), "free" => (free slots), "events" => [(events for 1 user), (another user...)]]].
      */
-    public function get_calendars_as_json(Request $request) {
+    public function getCalendarsAsJSON(Request $request) {
+        // TODO: Pass min length of free slot
         $validator = Validator::make($request->all(), [
             'date' => 'required|date_format:Y-m-d',
             'timezone' => 'required|timezone:all',
-            'user_ids.*' => 'required|digits_between:1,20'
+            'userIDs.*' => 'required|digits_between:1,20'
         ]);
         if ($validator->fails()) {
-            return (new ErrorMessage(null, "parameters_wrong", $validator->errors()->first()))->get_json();
+            return (new ErrorMessage(null, "parametersWrong", $validator->errors()->first()))->getJSON();
         }
 
-        $time_info = CalendarController::get_time_info($request->input("date"), $request->input("date"), $request->input("timezone")); // For building calendar in correct timezone
+        $timeInfo = CalendarController::getTimeInfo($request->input("date"), $request->input("date"), $request->input("timezone")); // For building calendar in correct timezone
 
         $events = [];
-        $user_ids = $request->input("user_ids");
-        foreach($user_ids as $user_id) {
-            $busy_slots = CalendarController::get_busy_slots_by_day($user_id, DBController::get_user_settings($user_id), $time_info);
-            if($busy_slots instanceof ErrorMessage) {
-                $busy_slots->add_description_context("Could not get busy slots: ");
-                return $busy_slots->get_json();
+        $userIDs = $request->input("userIDs");
+        foreach($userIDs as $userID) {
+            $busySlots = CalendarController::getBusySlotsByDay($userID, DBController::getUserSettings($userID), $timeInfo);
+            if($busySlots instanceof ErrorMessage) {
+                $busySlots->addDescriptionContext("Could not get busy slots: ");
+                return $busySlots->getJSON();
             }
-            $events[] = $busy_slots[0];
+            $events[] = $busySlots[0];
         }
-        $free_slots = CalendarController::get_free_slots($events);
+        $freeSlots = CalendarController::getFreeSlots($events);
 
         // Add to cache
-        DBController::set_freecache_slots(DBController::get_freecache_id_always_new($request->input("date"), $request->input("timezone"), implode(",", $user_ids)), $free_slots);
+        DBController::setFreeCacheSlots(DBController::getFreeCacheIDAlwaysNew($request->input("date"), $request->input("timezone"), implode(",", $userIDs)), $freeSlots);
 
-        return ["date" => $request->input("date"), "events" => $events, "free_slots" => $free_slots];
+        return ["date" => $request->input("date"), "events" => $events, "freeSlots" => $freeSlots];
     }
 
     /**
-     * Get calendars for array of users (`user_ids` array parameter) on a specific day (`date` parameter, `timezone` parameter) returned as array of ["date" => (date given in), "free" => (free slots), "events" => [(events for 1 user), (another user...)]]].
-     * TODO: Pass min length of free slot
+     * @http
+     * Gets calendars for specified users on a specific day as an image.
      */
-    public function get_calendars_as_image(Request $request) {
+    public function getCalendarsAsImage(Request $request) {
+        // TODO: Pass min length of free slot
         // Get free slots
         $validator = Validator::make($request->all(), [
             'date' => 'required|date_format:Y-m-d',
             'timezone' => 'required|timezone:all',
-            'user_ids.*' => 'required|digits_between:1,20'
+            'userIDs.*' => 'required|digits_between:1,20'
         ]);
         if ($validator->fails()) {
-            return (new ErrorMessage(null, "parameters_wrong", $validator->errors()->first()))->get_json();
+            return (new ErrorMessage(null, "parametersWrong", $validator->errors()->first()))->getJSON();
         }
-        $free_slots = CalendarController::get_free_slots_only_by_day($request->input("user_ids"), $request->input("date"), $request->input("timezone"));
-        if($free_slots instanceof ErrorMessage) {
-            $free_slots->add_description_context("Could not get free slots: ");
-            return $free_slots->get_json();
+        $freeSlots = CalendarController::getFreeSlotsOnlyByDay($request->input("userIDs"), $request->input("date"), $request->input("timezone"));
+        if($freeSlots instanceof ErrorMessage) {
+            $freeSlots->addDescriptionContext("Could not get free slots: ");
+            return $freeSlots->getJSON();
         }
         // Draw image
         $img = Image::canvas(100, 20, '#000000');
-        foreach($free_slots as $free_slot) {
+        foreach($freeSlots as $freeSlot) {
             // draw filled red rectangle
-            $img->rectangle($free_slot["start"] * (100/1440), 0, $free_slot["end"] * (100/1440), 19, function ($draw) {
+            $img->rectangle($freeSlot["start"] * (100/1440), 0, $freeSlot["end"] * (100/1440), 19, function ($draw) {
                 $draw->background('#1B5E58');
                 $draw->border(1, '#2EC4B6');
             });

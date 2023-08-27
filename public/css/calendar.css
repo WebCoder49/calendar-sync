@@ -32,12 +32,7 @@ body {
 }
 
 .calendar-container.summary .calendar-content.loading::before {
-    text-align: left;
     line-height: 2em;
-    width: auto;
-    height: auto;
-    background-color: transparent;
-    backdrop-filter: none;
 }
 
 .calendar-content.loading::before {

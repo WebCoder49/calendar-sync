@@ -10,15 +10,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckDiscordLogin
 {
+
     /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * Checks a user is signed in with a Discord login, and if not shows a log-in page.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(DiscordAuthController::get_current_user_id($request) == null) {
-            return response()->view('needs_login');
+        if(DiscordAuthController::getCurrentUserID($request) == null) {
+            return response()->view('needsLogin');
         }
         return $next($request);
     }

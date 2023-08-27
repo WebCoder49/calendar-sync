@@ -32,13 +32,13 @@ return [
     // ],
 
     'discord' => [
-        'client_id' => getenv('DISCORD_CLIENT_ID'),
-        'client_secret' => getenv('DISCORD_CLIENT_SECRET'),
-        'bot_token' => getenv('DISCORD_BOT_TOKEN')
+        'clientID' => getenv('DISCORD_CLIENT_ID'),
+        'clientSecret' => getenv('DISCORD_CLIENT_SECRET'),
+        'botToken' => getenv('DISCORD_BOT_TOKEN')
     ],
 
     'ggl' => [
-        'client_id' => getenv('GOOGLE_CLIENT_ID'),
-        'client_secret' => getenv('GOOGLE_CLIENT_SECRET'),
+        'clientID' => getenv('GOOGLE_CLIENT_ID'),
+        'clientSecret' => getenv('GOOGLE_CLIENT_SECRET'),
     ],
 ];

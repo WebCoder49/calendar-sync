@@ -4,42 +4,55 @@ namespace App\Exceptions;
 
 use Illuminate\Http\Request;
 
+/**
+ * Handles errors that will eventually be shown to the client.
+ */
 class ErrorMessage {
-    public $error_source;
-    public $error_id;
-    public $error_description;
+    public $errorSource;
+    public $errorID;
+    public $errorDescription;
 
-    public function __construct($error_source, string $error_id, string $error_description) {
-        $this->error_source = $error_source;
-        $this->error_id = $error_id;
-        $this->error_description = $error_description;
+    /**
+     * Creates an ErrorMessage
+     * @param string $errorSource Where the error comes from, "" if not from an external API.
+     * @param string $errorID A camelCase string standardising what the error is.
+     * @param string $errorDescription A description of the error / data with it that is human readable.
+     */
+    public function __construct(string $errorSource, string $errorID, string $errorDescription) {
+        $this->errorSource = $errorSource;
+        $this->errorID = $errorID;
+        $this->errorDescription = $errorDescription;
     }
 
-    public function add_description_context(string $description_prefix) {
-        $this->error_description = $description_prefix . $this->error_description;
+    /**
+     * Adds a prefix to the errorDescription.
+     * @param string $descriptionPrefix e.g. "Error while refreshing access token: "
+     */
+    public function addDescriptionContext(string $descriptionPrefix) {
+        $this->errorDescription = $descriptionPrefix . $this->errorDescription;
     }
 
-    public function get_view(Request $request, bool $hide_parameter_values) {
-        if($hide_parameter_values) {
+    public function getView(Request $request, bool $hideParameterValues) {
+        if($hideParameterValues) {
             return view('error', [
-                "error_source" => $this->error_source,
-                "error_id" => $this->error_id,
-                "error_description" => $this->error_description,
+                "errorSource" => $this->errorSource,
+                "errorID" => $this->errorID,
+                "errorDescription" => $this->errorDescription,
 
-                "hidden_parameter_string" => "?".implode("&", array_keys($request->all()))]);
+                "hiddenParameterString" => "?".implode("&", array_keys($request->all()))]);
         }
         return view('error', [
-            "error_source" => $this->error_source,
-            "error_id" => $this->error_id,
-            "error_description" => $this->error_description]);
+            "errorSource" => $this->errorSource,
+            "errorID" => $this->errorID,
+            "errorDescription" => $this->errorDescription]);
     }
 
-    public function get_json() {
+    public function getJSON() {
         return [
             "error" => [
-                "source" => $this->error_source,
-                "id" => $this->error_id,
-                "description" => $this->error_description
+                "source" => $this->errorSource,
+                "id" => $this->errorID,
+                "description" => $this->errorDescription
             ]
         ];
     }

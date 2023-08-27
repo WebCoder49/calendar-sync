@@ -53,12 +53,16 @@ class DBController extends Controller
     /**
      * Gets Calauth type, as a 3-letter abbreviation.
      * @param string $id The user ID that they were registered with (e.g. Discord ID).
-     * @return string The calauth type as a 3-letter abbreviation.
+     * @return string The calauth type as a 3-letter abbreviation, or null if the user is not registered.
      */
     public static function getCalauthType(string $id) {
-        return DB::scalar('SELECT calauthType FROM discordUsers WHERE discordID = ?',
-            [$id]
-        );
+        try {
+            return DB::scalar('SELECT calauthType FROM discordUsers WHERE discordID = ?',
+                [$id]
+            );
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**

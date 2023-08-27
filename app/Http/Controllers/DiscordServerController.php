@@ -61,7 +61,7 @@ class DiscordServerController extends Controller
 
             $membersDiscord = $membersDiscord->json();
 
-            if(array_key_exists('code', $membersDiscord) && $membersDiscord['code'] == 10004) { // Unknown Guild as no bot acces
+            if(array_key_exists('code', $membersDiscord) && $membersDiscord['code'] == 10004) { // Unknown Guild as no bot access
                 return view('needsBot', ['server' => $server]);
             }
 
@@ -74,8 +74,12 @@ class DiscordServerController extends Controller
                     continue;
                 }
 
-                $settings = DBController::getUserSettings($memberDiscord['user']['id']);
-                if($settings == null) { // No account
+                $calauthType = DBController::getCalauthType($memberDiscord['user']['id']);
+                if($calauthType == null || $calauthType == "") { // No account with calendar connected.
+                    if($memberDiscord['user']['id'] == DiscordAuthController::getCurrentUserID($request)) {
+                        // substr to remove "_seamless"
+                        return redirect("/_seamless/settings?redirectURL=".urlencode(substr($request->getRequestUri(), 10))."&message=Please%20connect%20your%20calendar%20so%20you%20can%20sync%20it%20with%20your%20friends%20in%20".urlencode($server["name"]).",%20then%20click%20%22Redirect%20me%20further%22.");
+                    }
                     $memberDiscord["unregistered"] = true;
                     $numUnregistered++;
                     $unregisteredUsernames[] = isset($memberDiscord["user"]["global_name"]) ? $memberDiscord["user"]["global_name"] : $memberDiscord["user"]["username"];

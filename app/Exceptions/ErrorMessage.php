@@ -18,7 +18,7 @@ class ErrorMessage {
      * @param string $errorID A camelCase string standardising what the error is.
      * @param string $errorDescription A description of the error / data with it that is human readable.
      */
-    public function __construct(string $errorSource, string $errorID, string $errorDescription) {
+    public function __construct(string|null $errorSource, string $errorID, string $errorDescription) {
         $this->errorSource = $errorSource;
         $this->errorID = $errorID;
         $this->errorDescription = $errorDescription;

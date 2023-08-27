@@ -35,7 +35,8 @@ function calendar_freeSlotDescription(slot) { // TODO: Finish with function for 
 
 /* Load the calendar */
 function calendar_load(date) {
-    window.location.hash = date;
+    document.location.hash = date;
+
     let isLoading = date; // Block earlier loads
 
     let calendarGUI = document.querySelector(".calendar-content");

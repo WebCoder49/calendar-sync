@@ -1,10 +1,31 @@
+var seamless_linkClickedStateChange = false;
+var seamless_serverSideURL = null;
+window.addEventListener("popstate", function(evt) {
+    if(!seamless_linkClickedStateChange) {
+        // Change by user
+        if(seamless_serverSideURL == document.location.pathname + document.location.search) {
+            // Only change in hash (day) with calendar
+            if(document.querySelector(".calendar-content") !== undefined && document.location.hash.length > 1) {
+                calendar_load(document.location.hash.substring(1)); // Remove first '#'
+            }
+            return;
+        }
+        seamless_load(document.location.pathname + document.location.search + document.location.hash);
+        seamless_serverSideURL = document.location.pathname + document.location.search;
+    }
+});
+
 /* Seamless links that link to other pages without unloading */
 function seamless_linkClicked(target_a) {
     if(new URL(target_a.href).origin == new URL(window.location).origin) {
-        // Same-site so seamless
-        window.history.pushState({}, "", target_a.href);
+        // Same-site and different page so seamless
+        console.log(target_a.pathname + target_a.search, seamless_serverSideURL);
 
         seamless_load(target_a.pathname + target_a.search + target_a.hash);
+        seamless_linkClickedStateChange = true;
+        window.history.pushState({}, document.title.innerHTML, target_a.href);
+        seamless_linkClickedStateChange = false;
+        seamless_serverSideURL = target_a.pathname + target_a.search;
 
         return false; // Not default behaviour
     }

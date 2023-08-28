@@ -21,7 +21,6 @@ class InteractionsController extends Controller {
         $signature = $request->header('X-Signature-Ed25519');
         $timestamp = $request->header('X-Signature-Timestamp');
         $postData = $request->getContent(); // file_get_contents('php://input');
-        return $postData;
         if ($signature != null && $timestamp != null && Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
             $type = $request->post("type");
 

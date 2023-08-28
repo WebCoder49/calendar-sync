@@ -35,15 +35,10 @@ class InteractionsController extends Controller {
 
             if($type == InteractionType::APPLICATION_COMMAND) {
                 $name = $request->post("data.name");
+                Log::info($name);
 
                 // /test = testing command
                 if ($name == "test") {
-                    Log::info(json_encode([
-                        "type" => InteractionResponseType::CHANNEL_MESSAGE_WITH_SOURCE,
-                        "data" => [
-                            "content" => 'Hello World',
-                        ],
-                    ]));
                     return [
                         "type" => InteractionResponseType::CHANNEL_MESSAGE_WITH_SOURCE,
                         "data" => [

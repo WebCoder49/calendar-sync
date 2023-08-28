@@ -32,9 +32,13 @@ return [
     // ],
 
     'discord' => [
+        'appID' => getenv('DISCORD_APP_ID'),
+        'publicKey' => getenv('DISCORD_PUBLIC_KEY'),
         'clientID' => getenv('DISCORD_CLIENT_ID'),
         'clientSecret' => getenv('DISCORD_CLIENT_SECRET'),
-        'botToken' => getenv('DISCORD_BOT_TOKEN')
+        'botToken' => getenv('DISCORD_BOT_TOKEN'),
+
+        'apiURL' => 'https://discord.com/api/v10/',
     ],
 
     'ggl' => [

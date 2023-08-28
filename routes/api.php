@@ -1,10 +1,8 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\CalendarController;
-use App\Http\Middleware\CheckDiscordLogin;
+use App\Bot\Controllers\InteractionsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +14,6 @@ use App\Http\Middleware\CheckDiscordLogin;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+
+Route::post('/bot/interactions', [InteractionsController::class, 'handleInteractions']);

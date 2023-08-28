@@ -57,7 +57,7 @@ class DiscordServerController extends Controller
                 'Authorization' => 'Bot ' . config('services.discord.botToken'),
                 'Content-Type' => 'application/json; charset=UTF-8',
                 'User-Agent' => config('app.userAgent'),
-            ])->asForm()->get('https://discord.com/api/v10/guilds/' . $id . '/members?limit=1000');
+            ])->asForm()->get(config('services.discord.apiURL').'guilds/' . $id . '/members?limit=1000');
 
             $membersDiscord = $membersDiscord->json();
 

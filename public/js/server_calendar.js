@@ -92,7 +92,7 @@ function calendar_load(date) {
             console.log("Couldn't load calendar:", request.responseText);
         }
     });
-    request.open("POST", "/api/calendars/json");
+    request.open("POST", "/api/web/calendars/json");
     request.setRequestHeader(
         "X-CSRF-TOKEN", document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     );

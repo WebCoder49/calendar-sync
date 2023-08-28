@@ -70,7 +70,7 @@
     @endforeach
 @endsection
 @section('calendar-after')
-    <script>var calendar_userIDs = [{!! $userIDsJS !!}]; var calendar_timezone = "{{ $timezone }}"; function calendar_getDayPreviewBG(date) { return "/api/calendars/img?date="+date+"&timezone={!! urlencode($timezone) . $userIDsURLParams !!}" }</script>
+    <script>var calendar_userIDs = [{!! $userIDsJS !!}]; var calendar_timezone = "{{ $timezone }}"; function calendar_getDayPreviewBG(date) { return "/api/web/calendars/img?date="+date+"&timezone={!! urlencode($timezone) . $userIDsURLParams !!}" }</script>
     <style>.day-preview { background-image: attr("data-bgimg"); }</style>
     <script src="{{asset('js/server_calendar.js')}}"></script>
 @endsection

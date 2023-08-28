@@ -23,10 +23,8 @@ use \App\Http\Controllers\SettingsController;
 |
 */
 
-// TODO: Read https://www.php.net/manual/en/langref.php from Constants onwards
-
-Route::post('/api/calendars/json', [CalendarController::class, 'getCalendarsAsJSON'])->middleware(CheckDiscordLogin::class);
-Route::get('/api/calendars/img', [CalendarController::class, 'getCalendarsAsImage'])->middleware(CheckDiscordLogin::class);
+Route::post('/api/web/calendars/json', [CalendarController::class, 'getCalendarsAsJSON'])->middleware(CheckDiscordLogin::class);
+Route::get('/api/web/calendars/img', [CalendarController::class, 'getCalendarsAsImage'])->middleware(CheckDiscordLogin::class);
 
 // Redirects = cannot be seamless
 Route::get('/auth', [DiscordAuthController::class, 'auth']);

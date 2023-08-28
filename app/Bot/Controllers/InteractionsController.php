@@ -24,6 +24,8 @@ class InteractionsController extends Controller {
         if ($signature != null && $timestamp != null && Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
             $type = $request->post("type");
 
+            Log::info(json_encode([$type, $postData]));
+
             if($type == InteractionType::PING) {
                 return [
                     'type' => InteractionResponseType::PONG,
@@ -35,12 +37,10 @@ class InteractionsController extends Controller {
 
                 // /test = testing command
                 if ($name == "test") {
-                    // Send a message into the channel where command was triggered from
                     return [
                         "type" => InteractionResponseType::CHANNEL_MESSAGE_WITH_SOURCE,
                         "data" => [
-                            // Fetches a random emoji to send from a helper function
-                            "content" => 'Hello World ' . array_rand(["🧑‍💻", "👨‍💻", "👩‍💻"]),
+                            "content" => 'Hello World',
                         ],
                     ];
                 }

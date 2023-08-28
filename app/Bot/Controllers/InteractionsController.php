@@ -8,6 +8,7 @@ use Discord\Interaction;
 use Discord\InteractionType;
 use Discord\InteractionResponseType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Handles interactions with the Discord bot, including commands, buttons in messages, etc.

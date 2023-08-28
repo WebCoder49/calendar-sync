@@ -38,12 +38,27 @@ class InteractionsController extends Controller {
                 $name = $data["name"];
                 Log::info($name);
 
-                // /test = testing command
-                if ($name == "test") {
+                // /welcome = greet users and give introduction
+                if ($name == "welcome") {
+                    $channel = $request->post("channel");
+                    $guildID = $channel["guild_id"];
                     return [
                         "type" => InteractionResponseType::CHANNEL_MESSAGE_WITH_SOURCE,
                         "data" => [
-                            "content" => 'Hello World',
+                            "content" => "**Let's synchronise our calendars with Calendar Sync, @everyone!** To get started, just click the link below, connect your Discord account and Google calendar, and choose some preferences if needed.",
+                            "components" => [
+                                [
+                                    "type" => 1, // Action Row
+                                    "components" => [
+                                        [
+                                            "type" => 2, // Button
+                                            "url" => config('app.url')."/server/".$guildID,
+                                            "label" => "Sync Your Calendar",
+                                            "style" => 5, // Link
+                                        ],
+                                    ],
+                                ],
+                            ],
                         ],
                     ];
                 }

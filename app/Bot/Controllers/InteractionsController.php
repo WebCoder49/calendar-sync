@@ -18,10 +18,14 @@ class InteractionsController extends Controller {
      * Webhook for all interactions with the Discord bot.
      */
     public function handleInteractions(Request $request) { // TODO: Deploy, test resp, re-git server
-        $signature = $_SERVER['HTTP_X_SIGNATURE_ED25519'];
-        $timestamp = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'];
+        try {
+            $signature = $_SERVER['HTTP_X_SIGNATURE_ED25519'];
+            $timestamp = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'];
+        } catch (\Exception $e) {
+            return response("Not verified.", 401);
+        }
         $postData = file_get_contents('php://input');
-        if ($signature != null && $timestamp != null && Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
+        if (Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
             $type = $request->post("type");
 
             if($type == InteractionType::PING) {

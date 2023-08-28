@@ -19,8 +19,8 @@ class InteractionsController extends Controller {
      */
     public function handleInteractions(Request $request) { // TODO: Deploy, test resp, re-git server
         try {
-            $signature = $_SERVER['HTTP_X_SIGNATURE_ED25519'];
-            $timestamp = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'];
+            $signature = $request->server('HTTP_X_SIGNATURE_ED25519');
+            $timestamp = $request->server('HTTP_X_SIGNATURE_TIMESTAMP');
         } catch (\Exception $e) {
             return response("Not verified.", 401);
         }

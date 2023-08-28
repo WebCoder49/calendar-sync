@@ -34,7 +34,7 @@ class InteractionsController extends Controller {
             }
 
             if($type == InteractionType::APPLICATION_COMMAND) {
-                $name = $request->post("name");
+                $name = $request->post("data.name");
 
                 // /test = testing command
                 if ($name == "test") {

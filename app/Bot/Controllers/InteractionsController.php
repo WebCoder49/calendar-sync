@@ -21,8 +21,7 @@ class InteractionsController extends Controller {
         $signature = $_SERVER['HTTP_X_SIGNATURE_ED25519'];
         $timestamp = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'];
         $postData = file_get_contents('php://input');
-        return [$postData, $signature, $timestamp, config('services.discord.publicKey')];
-        if (Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
+        if ($signature != null && $timestamp != null && Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
             $type = $request->post("type");
 
             if($type == InteractionType::PING) {

@@ -24,7 +24,7 @@ class InteractionsController extends Controller {
         } catch (\Exception $e) {
             return response("Not verified.", 401);
         }
-        $postData = file_get_contents('php://input');
+        $postData = $request->getContent(); // file_get_contents('php://input');
         if (Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
             $type = $request->post("type");
 

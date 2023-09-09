@@ -71,11 +71,19 @@ class SettingsController extends Controller
                     $selectedcalendars = [];
                     foreach($calendarsAvailable as $calendar) {
                         $id = $calendar["id"];
-                        if($request->has(str_replace('.', '_', 'calendar_selectedcalendars_'.$id))) {
+                        if($request->has(str_replace('.', '_', 'calendarSelectedCalendars_'.$id))) {
                             $selectedcalendars[] = $id;
                         }
                     }
                     $selectedcalendars = implode(" ", $selectedcalendars);
+
+                    if($selectedcalendars == "") {
+                        if($request->has('redirectURL')) {
+                            return redirect("settings?redirectURL=".urlencode($request->input('redirectURL'))."&message=You%20must%20select%20at%20least%20one%20calendar%20to%20use%20(in%20'Calendars%20Used').&activeHoursStart=".$request->input('activeHoursStart')."&activeHoursEnd=".$request->input('activeHoursEnd')."&preferencesTimezone=".$request->input('preferencesTimezone'));
+                        }
+                        return redirect("settings?message=You%20must%20select%20at%20least%20one%20calendar%20to%20use%20(in%20'Calendars%20Used').&activeHoursStart=".$request->input('activeHoursStart')."&activeHoursEnd=".$request->input('activeHoursEnd')."&preferencesTimezone=".$request->input('preferencesTimezone'));
+                    }
+
                     DBController::saveCalendarSettings($userID, $selectedcalendars);
                 }
                 if($request->has('redirectURL')) {

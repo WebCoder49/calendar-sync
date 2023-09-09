@@ -237,4 +237,23 @@ class DBController extends Controller
         }
         return $slots;
     }
+
+    /**
+     * Sets the stored registered members of a Discord server by ID.
+     * @param string $serverID guild ID of the Discord server.
+     * @param string $discordUsers comma-separated list of Discord user IDs.
+     */
+    public static function setServerMembers(string $serverID, string $discordUsers) {
+        DB::delete('DELETE FROM serverMembers WHERE serverID = ?', [(string)$serverID]);
+        DB::insert('INSERT INTO serverMembers (serverID, discordUsers) VALUES (?, ?)', [(string)$serverID, $discordUsers]); // Create new cache
+    }
+
+    /**
+     * Gets the stored registered members of a Discord server by ID.
+     * @param string $serverID guild ID of the Discord server.
+     * @return string comma-separated list of Discord user IDs.
+     */
+    public static function getServerMembers(string $serverID) {
+        return DB::scalar('SELECT discordUsers FROM serverMembers WHERE serverID = ?', [(string)$serverID]); // Store members again
+    }
 }

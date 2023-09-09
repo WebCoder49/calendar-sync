@@ -6,12 +6,12 @@
 @section('content')
     <script src="{{asset('js/settings.js')}}"></script>
 
-    @if(Request::get("message") != null)
+    @if(Request::get("message") !== null)
     <p class="warning">{{ Request::get("message") }}</p>
     @endif
 
     <section class="settings">
-        @if(Request::get("redirectURL") != null)
+        @if(Request::get("redirectURL") !== null)
             <div class="form-div"> {{--TODO: Make default message then `onboarding` URL parameter --}}
                 <h2><span class="material-symbols-rounded">&#xea65;</span> Welcome to Calendar Sync!</h2>
                 <p class="warning">Please connect a calendar and check your preferences below, and then you're good to go! You can access this page at any time by clicking on 'Settings'.</p>
@@ -57,13 +57,13 @@
                 <h3>Active Hours</h3>
                 <p>
                     All times outside this range will be marked as busy, so you won't be disturbed at night. These times are local to your time zone [TODO].<br/>
-                    @if(Request::get("activeHoursStart") != null)
+                    @if(Request::get("activeHoursStart") !== null)
                         <label for="activeHoursStart">Start: </label><input name="activeHoursStart" id="activeHoursStart" type="time" name="time" value="{{ Request::get("activeHoursStart") }}"/><br/>
                     @else
                         <label for="activeHoursStart">Start: </label><input name="activeHoursStart" id="activeHoursStart" type="time" name="time" value="{{ $activeHoursStart }}"/><br/>
                     @endif
 
-                    @if(Request::get("activeHoursEnd") != null)
+                    @if(Request::get("activeHoursEnd") !== null)
                         <label for="activeHoursEnd">End: </label><input name="activeHoursEnd" id="activeHoursEnd" type="time" name="time" value="{{ Request::get("activeHoursEnd") }}"/><br/>
                     @else
                         <label for="activeHoursEnd">End: </label><input name="activeHoursEnd" id="activeHoursEnd" type="time" name="time" value="{{ $activeHoursEnd }}"/><br/>
@@ -92,7 +92,7 @@
                 <p>
                     Choose your time zone here, and we'll take care of time conversion.<br/>
                     <button onclick="document.getElementById('preferencesTimezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone; this.form.dispatchEvent(new Event('change')); return false;">Autodetect</button><br/>
-                    @if(Request::get("preferencesTimezone") != null)
+                    @if(Request::get("preferencesTimezone") !== null)
                         <input type="text" id="preferencesTimezone" name="preferencesTimezone" list="timezone_dropdown" placeholder="Select Manually" value="{{ Request::get("preferencesTimezone") }}">
                     @else
                         <input type="text" id="preferencesTimezone" name="preferencesTimezone" list="timezone_dropdown" placeholder="Select Manually" value="{{ $preferencesTimezone }}">

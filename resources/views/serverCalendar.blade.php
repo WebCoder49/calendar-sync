@@ -41,24 +41,20 @@
 @endsection
 @section('calendar-top-labels')
     @php ($numMembers = 0)
-    @php ($userIDsJS = '')
-    @php ($userIDsURLParams = '')
     @foreach ($membersDiscord as $member)
         @unless (array_key_exists('bot', $member['user']) && $member['user']['bot'])
             @if(!array_key_exists("unregistered", $member) || $member["unregistered"] == false)
                 @php ($numMembers++)
-                @php ($userIDsJS = $userIDsJS.'"'.strval($member['user']['id']).'",')
-                @php ($userIDsURLParams = $userIDsURLParams.'&userIDs[]='.urlencode(strval($member['user']['id'])))
                 <div class="profile small">
-                    @if($member['nick'] != null) {{-- Nickname --}}
+                    @if($member['nick'] !== null) {{-- Nickname --}}
                         <p>{{ $member['nick'] }}</p>
                     @else
                         <p>{{ isset($member["user"]["global_name"]) ? $member["user"]["global_name"] : $member["user"]["username"] }}</p>
                     @endif
-                    @if($member['avatar'] != null) {{-- Server-Specific --}}
+                    @if($member['avatar'] !== null) {{-- Server-Specific --}}
                         <img src="https://cdn.discordapp.com/avatars/{{ $member['user']['id'] }}/{{ $member['avatar'] }}.png"/>
                     @else
-                        @if($member['user']['avatar'] != null)
+                        @if($member['user']['avatar'] !== null)
                             <img src="https://cdn.discordapp.com/avatars/{{ $member['user']['id'] }}/{{ $member['user']['avatar'] }}.png"/>
                         @else
                             <img src="https://cdn.discordapp.com/embed/avatars/{{ ($member['user']['id'] >> 22) % 6 }}.png"/>
@@ -70,7 +66,14 @@
     @endforeach
 @endsection
 @section('calendar-after')
-    <script>var calendar_userIDs = [{!! $userIDsJS !!}]; var calendar_timezone = "{{ $timezone }}"; function calendar_getDayPreviewBG(date) { return "/api/web/calendars/img?date="+date+"&timezone={!! urlencode($timezone) . $userIDsURLParams !!}" }</script>
+    <script>
+        var calendar_serverID = "{{ $server["id"] }}";
+        var calendar_timezone = "{{ $timezone }}";
+        var calendar_userIDsMd5 = "{{ $userIDsMd5 }}"; // For checking whether user list has changed.
+        function calendar_getDayPreviewBG(date) {
+            return "/api/web/calendars/day/img?date="+date+"&serverID={{ $server["id"] }}&timezone={!! urlencode($timezone) !!}"
+        }
+    </script>
     <style>.day-preview { background-image: attr("data-bgimg"); }</style>
     <script src="{{asset('js/server_calendar.js')}}"></script>
 @endsection

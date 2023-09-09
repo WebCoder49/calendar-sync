@@ -25,7 +25,7 @@ with AJAX --}}
         <script src="{{asset('js/common.js')}}"></script>
     </head>
     <body class="unloaded">
-        @if( session('discord.user.id') == null )
+        @if( session('discord.user.id') === null )
         <div style="z-index: 1000; font-size: 200%; background-color: red; color: white; font-family: monospace; position: fixed; bottom: 0; padding: 10px; margin: 0; left: 0; width: 100%; text-align: center;">Warning and Disclaimer: This web-app is nowhere near finished; I give you no promise of privacy or a smooth experience. If you are my friend, please feel free to give it a try / pentest it, but if you are someone on the open web, please <b>don't log in</b>. I am probably writing commands in the server right now. <i onclick="this.parentElement.style.display = 'none';">Click <b>here</b> to hide.</i></div>
         @endif
         <div id="seamless-progress">
@@ -38,7 +38,7 @@ with AJAX --}}
                 <a is="seamless-a" href="/server"><span class="material-symbols-rounded">&#xe7ef;</span> Servers</a>
                 <a is="seamless-a" href="/settings"><span class="material-symbols-rounded">&#xe8b8;</span> Settings</a>
             </nav>
-            @if( session('discord.user.id') == null )
+            @if( session('discord.user.id') === null )
                 <form class="profile large loggedout" method="get" action="https://discord.com/api/v10/oauth2/authorize" onsubmit='document.getElementById("main_state").value += window.location.hash; if(Intl.DateTimeFormat().resolvedOptions().timeZone != undefined) document.getElementById("main_state").value += ":"+encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);'>
                     <!--CSRF Token and redirect URL as `State`-->
                     <input type="hidden" name="state" id="main_state" value="{{ csrf_token() }}:{{ urlencode(str_replace("/_seamless", "", url()->full())) }}"/>
@@ -53,7 +53,7 @@ with AJAX --}}
             @else
                 <div class="profile large">
                     <p>{{ session('discord.user.global_name') }}</p>
-                    @if(session('discord.user.avatar') != null)
+                    @if(session('discord.user.avatar') !== null)
                         <img src="https://cdn.discordapp.com/avatars/{{ session('discord.user.id') }}/{{ session('discord.user.avatar') }}.png"/>
                     @else
                         <img src="https://cdn.discordapp.com/embed/avatars/{{ (session('discord.user.id') >> 22) % 6 }}.png"/>

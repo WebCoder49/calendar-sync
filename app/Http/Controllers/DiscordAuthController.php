@@ -95,7 +95,7 @@ class DiscordAuthController extends Controller
      * Logs out and revokes OAuth2 token from Discord.
      */
     public function logout(Request $request) {
-        if($request->session()->get('discord.accesstoken') != null) {
+        if($request->session()->get('discord.accesstoken') !== null) {
             $revokeTokenResponse = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $request->session()->get('discord.accesstoken'),
                 'User-Agent' => config('app.userAgent'),

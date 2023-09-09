@@ -22,10 +22,8 @@ class InteractionsController extends Controller {
         $signature = $request->header('X-Signature-Ed25519');
         $timestamp = $request->header('X-Signature-Timestamp');
         $postData = $request->getContent(); // file_get_contents('php://input');
-        if ($signature != null && $timestamp != null && Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
+        if ($signature !== null && $timestamp !== null && Interaction::verifyKey($postData, $signature, $timestamp, config('services.discord.publicKey'))) {
             $type = $request->post("type");
-
-            Log::info(json_encode([$type, $postData]));
 
             if($type == InteractionType::PING) {
                 return [
@@ -36,7 +34,6 @@ class InteractionsController extends Controller {
             if($type == InteractionType::APPLICATION_COMMAND) {
                 $data = $request->post("data");
                 $name = $data["name"];
-                Log::info($name);
 
                 // /welcome = greet users and give introduction
                 if ($name == "welcome") {
@@ -53,7 +50,7 @@ class InteractionsController extends Controller {
                                         [
                                             "type" => 2, // Button
                                             "url" => config('app.url')."/server/".$guildID,
-                                            "label" => "Sync Your Calendar",
+                                            "label" => "Sync My Calendar",
                                             "style" => 5, // Link
                                         ],
                                     ],

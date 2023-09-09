@@ -23,8 +23,9 @@ use \App\Http\Controllers\SettingsController;
 |
 */
 
-Route::post('/api/web/calendars/json', [CalendarController::class, 'getCalendarsAsJSON'])->middleware(CheckDiscordLogin::class);
-Route::get('/api/web/calendars/img', [CalendarController::class, 'getCalendarsAsImage'])->middleware(CheckDiscordLogin::class);
+Route::post('/api/web/calendars/day/json', [CalendarController::class, 'getCalendarsAsJSON'])->middleware(CheckDiscordLogin::class);
+Route::get('/api/web/calendars/day/img', [CalendarController::class, 'getCalendarsAsImage'])->middleware(CheckDiscordLogin::class);
+Route::get('/api/web/calendars/meeting/img', [CalendarController::class, 'getWeekMeetingContextImage'])->middleware(CheckDiscordLogin::class);
 
 // Redirects = cannot be seamless
 Route::get('/auth', [DiscordAuthController::class, 'auth']);

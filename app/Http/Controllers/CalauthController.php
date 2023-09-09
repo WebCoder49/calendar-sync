@@ -80,7 +80,7 @@ class CalauthController extends Controller
         if($type == "ggl") {
             if($tokensRecord->calauthExpiresAt <= time() + 60) {
                 // Generate new access token from refresh tokenconfig('services.ggl.clientID')
-                $accessToken = CalauthController::refresh_access_token($userID, "ggl", $tokensRecord->calauthRefreshToken, "https://oauth2.googleapis.com/token", config('services.ggl.clientID'), config('services.ggl.clientSecret'));
+                $accessToken = CalauthController::refreshAccessToken($userID, "ggl", $tokensRecord->calauthRefreshToken, "https://oauth2.googleapis.com/token", config('services.ggl.clientID'), config('services.ggl.clientSecret'));
                 if($accessToken instanceof ErrorMessage) {
                     $accessToken->addDescriptionContext("Could not refresh token: ");
                     return $accessToken;
@@ -106,11 +106,11 @@ class CalauthController extends Controller
         try {
             [$token, $redirectURL] = explode(':', $request->input('state'));
         } catch (Exception $e) {
-            return (new ErrorMessage(null, "wrong_csrf_format", "Try connecting your calendar again."))->getView($request, true);
+            return (new ErrorMessage(null, "wrongCSRFFormat", "Try connecting your calendar again."))->getView($request, true);
         }
         if($token == csrf_token()) {
             $userID = DiscordAuthController::getCurrentUserID($request);
-            if($userID != null) {
+            if($userID !== null) {
                 $accessTokenResponse = Http::withHeaders([
                     'Content-Type' => 'application/x-www-form-urlencoded',
                 ])->asForm()->post($codeExchangeURL, [
@@ -124,7 +124,7 @@ class CalauthController extends Controller
                 if($accessTokenResponse->successful()) {
                     $old_calendarType = DBController::getCalauthType($userID);
                     if($old_calendarType != "") {
-                        return (new ErrorMessage(null, "calendar_already_connected", CalauthController::calauthTypeReadable($old_calendarType)." already connected; you must disconnect it from settings first before connecting a different calendar."))->getView($request, true);
+                        return (new ErrorMessage(null, "calendarAlreadyConnected", CalauthController::calauthTypeReadable($old_calendarType)." already connected; you must disconnect it from settings first before connecting a different calendar."))->getView($request, true);
                     }
                     DBController::saveCalauth($userID, $calauthType, $accessTokenResponse["access_token"], $accessTokenResponse["refresh_token"], time() + $accessTokenResponse["expires_in"]);
 
@@ -141,7 +141,7 @@ class CalauthController extends Controller
             }
 
         } else {
-            return (new ErrorMessage(null, "wrong_csrf", "Try connecting your calendar again."))->getView($request, true);
+            return (new ErrorMessage(null, "wrongCSRF", "Try connecting your calendar again."))->getView($request, true);
         }
     }
 
@@ -199,7 +199,7 @@ class CalauthController extends Controller
      * @param string $clientID of Calauth
      * @param string $clientSecret of Calauth
      */
-    public static function refresh_access_token(string $userID, string $calauthType, string $refreshToken, string $refreshTokenURL, string $clientID, string $clientSecret) {
+    public static function refreshAccessToken(string $userID, string $calauthType, string $refreshToken, string $refreshTokenURL, string $clientID, string $clientSecret) {
         $revokeTokenResponse = Http::withHeaders([
             'Content-Type' => 'application/x-www-form-urlencoded',
         ])->asForm()->post($refreshTokenURL, [

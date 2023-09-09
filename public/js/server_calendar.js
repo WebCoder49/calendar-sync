@@ -1,6 +1,6 @@
 var weekPreviewDays = new Set();
 
-// calendar_userIDs array & calendar_timezone set in inline JS
+// calendar_serverID & calendar_timezone & calendar_userIDsMd5 set in inline JS
 
 /* Get current time as minutes since midnight */
 function calendar_getTime() {
@@ -80,6 +80,10 @@ function calendar_load(date) {
                     calendarGUI.append(slotGUI);
                 });
 
+                if(response["userIDsMd5"] != calendar_userIDsMd5) {
+                    seamless_loadThisPage(); // Reload as user joined/left
+                }
+
                 if(response["date"] == new Date().toISOString().split("T")[0]) {
                     // Today - show now indicator
                     let nowIndicator = document.createElement("div");
@@ -92,7 +96,7 @@ function calendar_load(date) {
             console.log("Couldn't load calendar:", request.responseText);
         }
     });
-    request.open("POST", "/api/web/calendars/json");
+    request.open("POST", "/api/web/calendars/day/json");
     request.setRequestHeader(
         "X-CSRF-TOKEN", document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     );
@@ -106,7 +110,7 @@ function calendar_load(date) {
     request.send(JSON.stringify({
         "date": date,
         "timezone": calendar_timezone,
-        "userIDs": calendar_userIDs
+        "serverID": calendar_serverID
     }));
 
     if(!weekPreviewDays.has(date)) {

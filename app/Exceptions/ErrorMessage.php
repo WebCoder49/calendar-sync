@@ -14,7 +14,7 @@ class ErrorMessage {
 
     /**
      * Creates an ErrorMessage
-     * @param string $errorSource Where the error comes from, "" if not from an external API.
+     * @param string|null $errorSource Where the error comes from, "" if not from an external API.
      * @param string $errorID A camelCase string standardising what the error is.
      * @param string $errorDescription A description of the error / data with it that is human readable.
      */

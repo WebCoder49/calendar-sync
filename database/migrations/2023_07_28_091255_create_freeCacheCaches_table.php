@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class extends Migration // The "freeCache" is a caching system for free slots by day, specific to timezone and date, that is kept until it is deemed too old.
 {
     /**
      * Run the migrations.

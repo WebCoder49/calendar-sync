@@ -16,7 +16,7 @@ class CheckDiscordLogin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(DiscordAuthController::getCurrentUserID($request) == null) {
+        if(DiscordAuthController::getCurrentUserID($request) === null) {
             return response()->view('needsLogin');
         }
         return $next($request);

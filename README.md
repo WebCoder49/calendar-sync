@@ -2,6 +2,8 @@
 
 I may restart development on it at some time, probably after removing the Discord dependency. Anyone else, please feel free to do the same thing! Remember to update the dependencies to avoid vulnerabilities.
 
+This is copyright 2023 Oliver Geer and licensed under the AGPL-3.0-or-later license, but if you would like some of the files under a different free and open source license (e.g. you want to merge them into a differently-licensed app, given that this app is unmaintained) please let me know.
+
 ---
 
 Install PHP extensions (Ubuntu):

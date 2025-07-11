@@ -1,3 +1,9 @@
+# Status: Unmaintained and Incomplete
+
+I may restart development on it at some time, probably after removing the Discord dependency. Anyone else, please feel free to do the same thing! Remember to update the dependencies to avoid vulnerabilities.
+
+---
+
 Install PHP extensions (Ubuntu):
 ```
 sudo apt install php-imagick

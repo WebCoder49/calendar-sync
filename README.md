@@ -4,7 +4,7 @@ The purpose of this proof-of-concept app was to **check when multiple people are
 
 I may restart development on it at some time, almost certainly after:
 * allowing a more progressively-enhanced approach for the frontend, without forcing AJAX "seamless single-page loading" on every browser.
-* adding other alternative sign-in options, or removing the Discord and Google dependencies and replacing them with more common protocols (e.g. email and iCal).
+* adding other alternative sign-in options, or removing the Discord and Google dependencies and replacing them with standard protocols (e.g. email and iCal).
 Anyone else, please feel free to do the same thing! Remember to update the dependencies to avoid vulnerabilities.
 
 This is copyright 2023 Oliver Geer and licensed under the AGPL-3.0-or-later license, but if you would like some of the files under a different free and open source license (e.g. you want to merge them into a differently-licensed app, given that this app is unmaintained) please let me know.
